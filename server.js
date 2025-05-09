@@ -20,8 +20,8 @@ app.post("/send", async (req, res) => {
   const message = {
     to: token,
     sound: "default",
-    title: "Original Title",
-    body: "And here is the body! 2",
+    title: "Ajmo DJUROOOO",
+    body: "Nikad ne jebi sam. SAAAAAM!!!",
     data: { someData: "goes here" },
   };
   await fetch("https://exp.host/--/api/v2/push/send", {
