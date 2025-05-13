@@ -1,4 +1,3 @@
-    res.status(200).json({ token, userId: user._id });
 const User = require("../models/User");
 var bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -198,9 +197,7 @@ exports.loginUser = async (req, res) => {
 
 
 
-
     res.status(200).json({ token, userId: user._id });
-
     // Send the token as a response
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -219,7 +216,6 @@ exports.getUsers = async (req, res) => {
         image: prettyUrlDataImage(`${process.env.API_URL}/${user.image}`)
       };
     });
-    console.log("usersData++",usersData)
 
 
     res.status(200).json(usersData);
