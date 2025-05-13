@@ -15,18 +15,15 @@ if (!admin.apps.length) {
 }
 
 async function sendTaskToBackend(task) {
-  console.log("object", task);
-  const functionUrl =
-    "https://addtasktofirestore-2fgibvbt4q-uc.a.run.app/addTaskToFirestore";
-
-  // try {
+ 
+  const functionUrl = "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/addTaskToFirestore"
   await axios
     .post(functionUrl, { taskData: task })
     .then((res) => {
       console.log("solve", res.data.message);
     })
     .catch((err) => {
-      console.log("solve", err);
+      console.log("err", err);
     });
 }
 
