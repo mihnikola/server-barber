@@ -33,23 +33,21 @@ exports.sendNotification = async (req, res) => {
     .catch((err) => {
       res.status(500).send("Notification cannot successfully");
     });
-}
+};
 // API route to save token
 
 exports.saveToken = async (req, res) => {
-  const { token } = req.body;
-
+  const { tokenExpo, tokenUser } = req.body;
   try {
-    const tokens = await Token.findOne({ token });
+    const tokens = await Token.findOne({ token: tokenExpo });
     if (tokens) {
-        return res.status(200).send("Token already exist");
+      return res.status(200).send("Token already exist");
     }
-    const newToken = new Token({ token });
+    const newToken = new Token({ token: tokenExpo, user: tokenUser });
     await newToken.save();
 
     res.status(200).send("Token saved successfully");
-} catch (error) {
+  } catch (error) {
     res.status(500).send("Token is not saved successfully");
   }
-}
-
+};
