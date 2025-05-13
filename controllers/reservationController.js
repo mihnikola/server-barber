@@ -149,7 +149,7 @@ exports.getReservations = async (req, res) => {
       })
         .sort({ date: 1 })
         .populate("service") // Populate service data
-        .populate("employer"); // Populate employee data
+        .populate("user"); // Populate employee data
     } else {
       reservations = await Reservation.find({
         status: { $nin: [2] },
@@ -157,7 +157,7 @@ exports.getReservations = async (req, res) => {
         employer: emplId,
       })
         .populate("service") // Populate service data
-        .populate("user"); // Populate employee data
+        .populate("employer"); // Populate employee data
     }
 
     res.status(200).json(reservations);
