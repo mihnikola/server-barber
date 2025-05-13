@@ -50,19 +50,19 @@ function getDateRange(dateString) {
 }
 
 const convertToDataTime = (valueData) => {
- const queryString = valueData;
-const result = {};
+  const queryString = valueData;
+  const result = {};
 
-queryString.split('&').forEach(pair => {
-  const [key, value] = pair.split('=');
-  if (key === 'date') {
-    result.date = decodeURIComponent(value);
-  } else if (key === 'employer[id]') {
-    result.employer = { id: decodeURIComponent(value) };
-  } else if (key === 'service[duration]') {
-    result.serviceDuration = decodeURIComponent(value);
-  }
-});
+  queryString.split("&").forEach((pair) => {
+    const [key, value] = pair.split("=");
+    if (key === "date") {
+      result.date = decodeURIComponent(value);
+    } else if (key === "employer[id]") {
+      result.employer = { id: decodeURIComponent(value) };
+    } else if (key === "service[duration]") {
+      result.serviceDuration = decodeURIComponent(value);
+    }
+  });
 
   return result;
 };
@@ -77,7 +77,8 @@ exports.getTimes = async (req, res) => {
 
   try {
     const result = convertToDataTime(req._parsedOriginalUrl.query);
-    const { date, service, employer } = result;
+
+    const { date, serviceDuration, employer } = result;
 
     let decoded = null;
     if (token) {
@@ -91,6 +92,7 @@ exports.getTimes = async (req, res) => {
       date: { $gte: start, $lt: end },
     }).populate("service", "duration"); // This will populate only the 'duration' field from the Service model
 
+
     if (reservation.length > 0) {
       const times = timeToParameters(reservation);
       const result = times.map(([hours, minutes]) => {
@@ -102,7 +104,7 @@ exports.getTimes = async (req, res) => {
           hours,
           minutes,
           duration: reservationForTime
-            ? reservationForTime.service.duration - 10
+            ? reservationForTime.service?.duration - 10
             : null,
         };
       });
@@ -110,9 +112,8 @@ exports.getTimes = async (req, res) => {
       const time = result.map((item) => {
         return addMinutesToTime(item.hours, item.minutes, item.duration);
       });
-
       const reservationValueTimesData = reservation.map((item) => {
-        return convertWithChooseService(item.time, service.duration - 10);
+        return convertWithChooseService(item.time, serviceDuration - 10);
       });
       const timeRanges = reservationValueTimesData.map((item, index) => {
         const timeValue = time[index].split(":").map(Number);
@@ -126,17 +127,17 @@ exports.getTimes = async (req, res) => {
         };
       });
       getTimeValues(timeRanges).then((result) => {
-        const futureSlots = filterFutureTimeSlots(result, now);
+        const futureSlots = filterFutureTimeSlots(result, now,date);
         res.status(200).json(futureSlots);
       });
     } else {
       const times = await Time.find();
+
       const futureSlots = filterFutureTimeSlots(times, now, date);
 
       res.status(200).json(futureSlots);
     }
   } catch (err) {
-    console.log("object", err);
     res.status(500).json({ error: err.message });
   }
 };
