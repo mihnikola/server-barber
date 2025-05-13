@@ -49,23 +49,6 @@ function getDateRange(dateString) {
   return { start, end };
 }
 
-const convertToDataTime = (valueData) => {
-  const queryString = valueData;
-  const result = {};
-
-  queryString.split("&").forEach((pair) => {
-    const [key, value] = pair.split("=");
-    if (key === "date") {
-      result.date = decodeURIComponent(value);
-    } else if (key === "employer[id]") {
-      result.employer = { id: decodeURIComponent(value) };
-    } else if (key === "service[duration]") {
-      result.serviceDuration = decodeURIComponent(value);
-    }
-  });
-
-  return result;
-};
 exports.getTimes = async (req, res) => {
   const now = new Date();
   const token = req.header("Authorization")
@@ -76,8 +59,17 @@ exports.getTimes = async (req, res) => {
   if (!token) return res.status(403).send("Access denied");
 
   try {
-    const result = convertToDataTime(req._parsedOriginalUrl.query);
+    const dateFromQuery = req.query.date;
+    const employerIdFromQuery = req.query["employer[id]"]; 
+    const serviceDurationFromQuery = req.query["service[duration]"]; 
 
+    const result = {
+      date: dateFromQuery,
+      employer: {
+        id: employerIdFromQuery,
+      },
+      serviceDuration: parseInt(serviceDurationFromQuery, 10),
+    };
     const { date, serviceDuration, employer } = result;
 
     let decoded = null;
@@ -91,7 +83,6 @@ exports.getTimes = async (req, res) => {
       user: emplId,
       date: { $gte: start, $lt: end },
     }).populate("service", "duration"); // This will populate only the 'duration' field from the Service model
-
 
     if (reservation.length > 0) {
       const times = timeToParameters(reservation);
@@ -127,7 +118,7 @@ exports.getTimes = async (req, res) => {
         };
       });
       getTimeValues(timeRanges).then((result) => {
-        const futureSlots = filterFutureTimeSlots(result, now,date);
+        const futureSlots = filterFutureTimeSlots(result, now, date);
         res.status(200).json(futureSlots);
       });
     } else {
