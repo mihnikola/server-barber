@@ -2,7 +2,6 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const app = express();
-app.use(cors());
 const tokenRoutes = require('./routes/tokenRoutes');
 const userRoutes = require("./routes/userRoutes");
 const serviceRoutes = require("./routes/serviceRoutes");
@@ -11,6 +10,8 @@ const timesRoutes = require("./routes/timesRoutes");
 
 const connectDB = require('./connectDB.js');
 // Middleware to parse JSON
+app.use(cors());
+
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 
