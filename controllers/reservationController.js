@@ -171,9 +171,9 @@ exports.getReservations = async (req, res) => {
     let reservations = [];
     if (!date) {
       reservations = await Reservation.find({
-        user: customerId,
+        user: "68250631793b784825191821",
         status: { $nin: [2] },
-        date: check === "true" ? { $gte: isoString } : { $lte: isoString },
+        date: check === "true" ? { $gt: isoString } : { $lt: isoString },
       })
         .sort({ date: 1 })
         .populate("service") // Populate service data
