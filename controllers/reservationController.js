@@ -173,7 +173,7 @@ exports.getReservations = async (req, res) => {
       reservations = await Reservation.find({
         user: customerId,
         status: { $nin: [2] },
-        date: check === "true" ? { $gt: isoString } : { $lt: isoString },
+        date: check === "true" ? { $gte: isoString } : { $lte: isoString },
       })
         .sort({ date: 1 })
         .populate("service") // Populate service data
