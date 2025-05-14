@@ -3,29 +3,13 @@ const {
   addMinutesToTime,
   getTimeValues,
   convertWithChooseService,
+  getDateRange,
+  convertToDateFormat,
+  filterFutureTimeSlots,
 } = require("../helpers");
 const Reservation = require("../models/Reservation");
 const Time = require("../models/Time");
 const jwt = require("jsonwebtoken");
-
-function filterFutureTimeSlots(timeSlots, currentTime, dateValue) {
-  const now = new Date();
-
-  const dateS = new Date(dateValue);
-
-  if (dateS > now) {
-    return timeSlots;
-  }
-  return timeSlots.filter((timeSlot) => {
-    const [hours, minutes] = timeSlot.value.split(":").map(Number);
-    const slotTime = new Date(currentTime);
-    slotTime.setHours(hours);
-    slotTime.setMinutes(minutes);
-    slotTime.setSeconds(0);
-    slotTime.setMilliseconds(0);
-    return slotTime > currentTime;
-  });
-}
 
 exports.createTime = async (req, res) => {
   try {
@@ -37,17 +21,6 @@ exports.createTime = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-function convertToDateFormat(dateStr) {
-  // Parse the input date string to a Date object
-  return dateStr.split("T")[0]; // Replace 'Z' with '+00:00'
-}
-
-function getDateRange(dateString) {
-  const start = new Date(dateString + "T00:00:00.000Z");
-  const end = new Date(start);
-  end.setUTCDate(end.getUTCDate() + 1);
-  return { start, end };
-}
 
 exports.getTimes = async (req, res) => {
   const now = new Date();
@@ -60,9 +33,10 @@ exports.getTimes = async (req, res) => {
 
   try {
     const dateFromQuery = req.query.date;
-    const employerIdFromQuery = req.query["employer[id]"]; 
-    const serviceDurationFromQuery = req.query["service[duration]"]; 
+    const employerIdFromQuery = req.query["employer[id]"];
+    const serviceDurationFromQuery = req.query["service[duration]"];
 
+    
     const result = {
       date: dateFromQuery,
       employer: {
@@ -76,11 +50,12 @@ exports.getTimes = async (req, res) => {
     if (token) {
       decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     }
-    const emplId = decoded ? decoded.id : employer.id;
+    const emplId = employer ?  employer.id : decoded.id;
     const { start, end } = getDateRange(convertToDateFormat(date));
+
     const reservation = await Reservation.find({
       status: { $nin: [2] },
-      user: emplId,
+      employer: emplId,
       date: { $gte: start, $lt: end },
     }).populate("service", "duration"); // This will populate only the 'duration' field from the Service model
 
