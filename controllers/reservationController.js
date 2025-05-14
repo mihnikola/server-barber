@@ -15,8 +15,8 @@ if (!admin.apps.length) {
 }
 
 async function sendTaskToBackend(task) {
- 
-  const functionUrl = "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/addTaskToFirestore"
+  const functionUrl =
+    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/addTaskToFirestore";
   await axios
     .post(functionUrl, { taskData: task })
     .then((res) => {
@@ -82,6 +82,13 @@ async function sendTaskToBackend(task) {
 //     res.status(500).json({ error: err.message });
 //   }
 // };
+function updateTimeToTenUTC(dateString,timeString) {
+  const datePart = dateString.substring(0, 10);
+  const desiredUTCTime = `${timeString}:00.000+00:00`;
+  const newUTCDateString = `${datePart}T${desiredUTCTime}`;
+  return newUTCDateString;
+}
+
 
 exports.createReservation = async (req, res) => {
   try {
@@ -95,8 +102,10 @@ exports.createReservation = async (req, res) => {
     const employerData = employerId === "" ? decoded.id : employerId;
     const status = customer !== "" ? 1 : 0;
     const timeStampValue = convertToTimeStamp(date?.dateString, time);
+    const dateTimeStringValue = updateTimeToTenUTC(date?.dateString,time);
+
     const newReservation = new Reservation({
-      date: date?.dateString,
+      date: dateTimeStringValue,
       time,
       service: service_id,
       employer: employerData,
@@ -108,12 +117,11 @@ exports.createReservation = async (req, res) => {
     await newReservation.save();
 
     const taskData = {
-      status: "scheduled", // Initial status for the task
-      performAt: timeStampValue, // Use the reservation time as the performAt time
+      status: "scheduled",
+      performAt: timeStampValue,
       token: tokenExpo.token,
-
-      // Add other relevant task details if needed
     };
+    
     sendTaskToBackend(taskData);
     res.status(201).json(newReservation);
   } catch (err) {
@@ -121,6 +129,23 @@ exports.createReservation = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+function convertSerbianDateTimeToUTCWithSplitJoin(dateString, timeString) {
+  // Split and reformat the date string to YYYY-MM-DD
+  const dateParts = dateString.split(".");
+  const day = dateParts[0].trim().padStart(2, "0");
+  const month = parseInt(dateParts[1].trim()).toString().padStart(2, "0"); // Month is 0-indexed
+  const year = dateParts[2].trim();
+  const iso8601Date = [year, month, day].join("-");
+
+  // The time string is already in HH:mm:ss format
+  const iso8601Time = timeString;
+
+  // Construct the ISO 8601 string, adding .000Z for UTC and milliseconds (since not provided)
+  const iso8601UTCString = [iso8601Date, "T", iso8601Time, ".000Z"].join("");
+
+  return iso8601UTCString;
+}
 
 // Get all reservations
 exports.getReservations = async (req, res) => {
@@ -132,8 +157,11 @@ exports.getReservations = async (req, res) => {
   if (!token) return res.status(403).send("Access denied");
   const { date, check } = req.query;
   const currentDate = new Date(); // This will be a valid JavaScript Date object
-  const twoHoursLater = new Date(currentDate.getTime() + 2 * 60 * 60 * 1000);
-  const isoString = twoHoursLater.toISOString();
+  const utcDateTime = convertSerbianDateTimeToUTCWithSplitJoin(
+    currentDate.toLocaleDateString(),
+    currentDate.toLocaleTimeString()
+  );
+  const isoString = utcDateTime;
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     const dateValue = date ? date : null;
@@ -145,7 +173,7 @@ exports.getReservations = async (req, res) => {
       reservations = await Reservation.find({
         user: customerId,
         status: { $nin: [2] },
-        date: check === "true" ? { $gte: isoString } : { $lt: isoString },
+        date: check === "true" ? { $gt: isoString } : { $lt: isoString },
       })
         .sort({ date: 1 })
         .populate("service") // Populate service data
