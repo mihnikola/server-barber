@@ -102,9 +102,46 @@ const convertToTimeStamp = (dateStr, timeStr) => {
   // Convert the Date object into the ISO 8601 format string in UTC timezone
   return dateObj.toISOString();
 };
+const convertToDateFormat = (dateStr) => {
+  // Parse the input date string to a Date object
+  return dateStr.split("T")[0]; // Replace 'Z' with '+00:00'
+}
 
+const  getDateRange = (dateString) => {
+  const start = new Date(dateString + "T00:00:00.000Z");
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 1);
+  return { start, end };
+}
+
+function toLocaleDateTimeString(utcString) {
+  const date = new Date(utcString);
+  return date.toLocaleString();
+}
+
+const filterFutureTimeSlots = (timeSlots, currentTime, dateValue) => {
+  const now = new Date();
+  const dateS = new Date(dateValue);
+
+  if (toLocaleDateTimeString(dateS) > toLocaleDateTimeString(now)) {
+
+    return timeSlots;
+  }
+
+  return timeSlots.filter((timeSlot) => {
+    const [hours, minutes] = timeSlot.value.split(":").map(Number);
+    const slotTime = new Date(currentTime);
+    slotTime.setHours(hours);
+    slotTime.setMinutes(minutes);
+    slotTime.setSeconds(0);
+    slotTime.setMilliseconds(0);
+    return slotTime > currentTime;
+  });
+}
 
 module.exports = {
+  convertToDateFormat,
+  getDateRange,
   getTimeValues,
   timeToParameters,
   addMinutesToTime,
@@ -113,4 +150,5 @@ module.exports = {
   base64ToUriFunc,
   prettyUrlDataImage,
   convertToTimeStamp,
+  filterFutureTimeSlots
 };
