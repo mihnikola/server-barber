@@ -120,24 +120,25 @@ function toLocaleDateTimeString(utcString) {
 }
 
 const filterFutureTimeSlots = (timeSlots, currentTime, dateValue) => {
+  const slotTimeLocale = new Date(currentTime);
+  const slotTime = toLocaleDateTimeString(slotTimeLocale);
+
   const now = new Date();
   const dateS = new Date(dateValue);
-
   if (toLocaleDateTimeString(dateS) > toLocaleDateTimeString(now)) {
-
     return timeSlots;
   }
 
   return timeSlots.filter((timeSlot) => {
     const [hours, minutes] = timeSlot.value.split(":").map(Number);
-    const slotTime = new Date(toLocaleDateTimeString(currentTime));
     slotTime.setHours(hours);
     slotTime.setMinutes(minutes);
     slotTime.setSeconds(0);
     slotTime.setMilliseconds(0);
+
     return slotTime > currentTime;
   });
-}
+};
 
 module.exports = {
   convertToDateFormat,
