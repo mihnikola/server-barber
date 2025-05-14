@@ -130,7 +130,7 @@ const filterFutureTimeSlots = (timeSlots, currentTime, dateValue) => {
 
   return timeSlots.filter((timeSlot) => {
     const [hours, minutes] = timeSlot.value.split(":").map(Number);
-    const slotTime = new Date(currentTime);
+    const slotTime = new Date(toLocaleDateTimeString(currentTime));
     slotTime.setHours(hours);
     slotTime.setMinutes(minutes);
     slotTime.setSeconds(0);
