@@ -27,61 +27,6 @@ async function sendTaskToBackend(task) {
     });
 }
 
-// exports.createReservation = async (req, res) => {
-//   try {
-//     const { date, time, service_id, token, customer, employerId } =
-//       req.body.params;
-
-//     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-//     const tokenExpo = await Token.findOne({ user: decoded.id });
-
-//     const customerName = customer !== "" ? customer : "";
-//     const customerId = customer !== "" ? null : decoded.id;
-//     const employerData = employerId === "" ? decoded.id : employerId;
-//     const status = customer !== "" ? 1 : 0;
-//     const timeStampValue = convertToTimeStamp(date?.dateString, time);
-
-//     const functionUrl =
-//       "https://us-central1-barber-demo-218de.cloudfunctions.net/addTaskCollection";
-//     const searchParams = {
-//       timeStampValue,
-//       tokenExpo,
-//     };
-//     const requestOptions = {
-//       method: "POST",
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//       body: JSON.stringify(searchParams),
-//     };
-//     try {
-//       const response = await fetch(functionUrl, requestOptions);
-//       const responseJSON = await response.json();
-//       console.log({ responseJSON });
-//     } catch (error) {
-//       console.error("Error calling function:", error);
-//     }
-
-//     const dateValue = timeStampValue.replace("Z", "+00:00");
-
-//     const newReservation = new Reservation({
-//       date: dateValue,
-//       time,
-//       service: service_id,
-//       employer: employerData,
-//       user: customerId,
-//       customer: customerName,
-//       status,
-//     });
-
-//     await newReservation.save();
-
-//     res.status(201).json(newReservation);
-//   } catch (err) {
-//     console.log("errorcina", err);
-//     res.status(500).json({ error: err.message });
-//   }
-// };
 function updateTimeToTenUTC(dateString,timeString) {
   const datePart = dateString.substring(0, 10);
   const desiredUTCTime = `${timeString}:00.000+00:00`;
