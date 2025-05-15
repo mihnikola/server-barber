@@ -76,13 +76,13 @@ exports.createReservation = async (req, res) => {
 
 function convertSerbianDateTimeToUTCWithSplitJoin(dateString, timeString) {
   // Split the date string
-  const dateParts = dateString.trim().split(".");
+  const dateParts = dateString?.trim().split(".");
   const day = dateParts[0];
 
-  if (dateParts[1].trim().length > 1) {
+  if (dateParts[1]?.trim().length > 1) {
     month = dateParts[1]; // Month is 0-indexed
   } else {
-    month = `0${dateParts[1].trim()}`; // Month is 0-indexed
+    month = `0${dateParts[1]?.trim()}`; // Month is 0-indexed
   }
   const year = dateParts[2];
 
@@ -135,8 +135,8 @@ exports.getReservations = async (req, res) => {
         status: { $nin: [2] },
         date:
           check === "true"
-            ? { $gte: isoString.trim() }
-            : { $lte: isoString.trim() },
+            ? { $gte: isoString?.trim() }
+            : { $lte: isoString?.trim() },
       })
         .sort({ date: 1 })
         .populate("service")
@@ -187,6 +187,8 @@ exports.getReservationById = async (req, res) => {
         select: "id name duration price image",
         transform: (doc) => {
           if (doc.image) {
+            // Assuming the image field stores the relative path
+            // doc.image = `http://10.58.158.121:5000/${doc.image}`; // Construct the full URL
             doc.image = prettyUrlDataImage(
               `${process.env.API_URL}/${doc.image}`
             );
