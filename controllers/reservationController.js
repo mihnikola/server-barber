@@ -75,30 +75,52 @@ exports.createReservation = async (req, res) => {
 };
 
 function convertSerbianDateTimeToUTCWithSplitJoin(dateString, timeString) {
-  // Split the date string
-  const dateParts = dateString?.trim().split(".");
-  const day = dateParts[0];
+  const localeDateTimeString = `${dateString} ${timeString}`;
 
-  if (dateParts[1]?.trim().length > 1) {
-    month = dateParts[1]; // Month is 0-indexed
-  } else {
-    month = `0${dateParts[1]?.trim()}`; // Month is 0-indexed
+  if (!localeDateTimeString) {
+    return null;
   }
-  const year = dateParts[2];
 
-  // Ensure day and month are zero-padded if necessary
-  const paddedDay = day.padStart(2, "0");
-  const paddedMonth = month.toString().padStart(2, "0");
+  // Split the localeDateTimeString
+  const dateAndTimeParts = localeDateTimeString.split(" "); // Split date and time
 
-  const iso8601Date = [year, paddedMonth, paddedDay].join("-");
+  let day = dateAndTimeParts[0].split(".")[0];
+  let month = dateAndTimeParts[1].split(".")[0];
+  let year = dateAndTimeParts[2].split(".")[0];
 
-  // The time string is already in HH:mm:ss format
-  const iso8601Time = timeString;
+  let hour = dateAndTimeParts[3].split(":")[0];
+  let minute = dateAndTimeParts[3].split(":")[1];
+  let second = dateAndTimeParts[3].split(":")[2];
 
-  // Construct the ISO 8601 string, adding .000Z for UTC and milliseconds (since not provided)
-  const iso8601UTCString = [iso8601Date, "T", iso8601Time, ".000Z"].join("");
 
-  return iso8601UTCString;
+  // Parse day, month, year, hour, minute, and second directly
+  day = parseInt(day, 10);
+  month = parseInt(month, 10) - 1; // Month is 0-indexed
+  year = parseInt(year, 10);
+  hour = parseInt(hour, 10);
+  minute = parseInt(minute, 10);
+  second = parseInt(second, 10);
+
+  //check if parsing was successful
+  if (
+    isNaN(day) ||
+    isNaN(month) ||
+    isNaN(year) ||
+    isNaN(hour) ||
+    isNaN(minute) ||
+    isNaN(second)
+  ) {
+    console.error(`Invalid date/time value in: ${localeDateTimeString}`);
+    return null;
+  }
+
+
+  const localDate = new Date(year, month, day, hour, minute, second);
+  const utcDate = new Date(
+    localDate.getTime() - localDate.getTimezoneOffset() * 60 * 1000
+  );
+  const utcTimeString = utcDate.toISOString();
+  return utcTimeString;
 }
 
 // Get all reservations
@@ -135,8 +157,8 @@ exports.getReservations = async (req, res) => {
         status: { $nin: [2] },
         date:
           check === "true"
-            ? { $gte: isoString?.trim() }
-            : { $lte: isoString?.trim() },
+            ? { $gte: isoString }
+            : { $lte: isoString },
       })
         .sort({ date: 1 })
         .populate("service")
