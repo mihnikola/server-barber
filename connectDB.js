@@ -4,7 +4,10 @@ const uri =
 
 async function connectDB() {
   try {
-    await mongoose.connect(uri);
+    await mongoose.connect(uri,{
+        serverSelectionTimeoutMS: 10000
+
+    });
     console.log("Database connected successfully to MongoDB");
   } catch (error) {
     console.error("Error connecting to MongoDB:", error);
