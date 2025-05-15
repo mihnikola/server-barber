@@ -147,6 +147,7 @@ function convertSerbianDateTimeToUTCWithSplitJoin(dateString, timeString) {
   return iso8601UTCString;
 }
 
+
 // Get all reservations
 exports.getReservations = async (req, res) => {
   const token = req.header("Authorization")
@@ -156,6 +157,7 @@ exports.getReservations = async (req, res) => {
     : req.get("authorization");
   if (!token) return res.status(403).send("Access denied");
   const { date, check } = req.query;
+
   const currentDate = new Date(); // This will be a valid JavaScript Date object
   const utcDateTime = convertSerbianDateTimeToUTCWithSplitJoin(
     currentDate.toLocaleDateString(),
@@ -171,13 +173,13 @@ exports.getReservations = async (req, res) => {
     let reservations = [];
     if (!date) {
       reservations = await Reservation.find({
-        user: "68250631793b784825191821",
+        user: customerId,
         status: { $nin: [2] },
         date: check === "true" ? { $gt: isoString } : { $lt: isoString },
       })
         .sort({ date: 1 })
-        .populate("service") // Populate service data
-        .populate("employer"); // Populate employee data
+        .populate("service")
+        .populate("employer");
     } else {
       reservations = await Reservation.find({
         status: { $nin: [2] },
@@ -193,6 +195,7 @@ exports.getReservations = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
 
 exports.patchReservationById = async (req, res) => {
   try {
