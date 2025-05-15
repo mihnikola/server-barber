@@ -27,13 +27,12 @@ async function sendTaskToBackend(task) {
     });
 }
 
-function updateTimeToTenUTC(dateString,timeString) {
+function updateTimeToTenUTC(dateString, timeString) {
   const datePart = dateString.substring(0, 10);
   const desiredUTCTime = `${timeString}:00.000+00:00`;
   const newUTCDateString = `${datePart}T${desiredUTCTime}`;
   return newUTCDateString;
 }
-
 
 exports.createReservation = async (req, res) => {
   try {
@@ -47,7 +46,7 @@ exports.createReservation = async (req, res) => {
     const employerData = employerId === "" ? decoded.id : employerId;
     const status = customer !== "" ? 1 : 0;
     const timeStampValue = convertToTimeStamp(date?.dateString, time);
-    const dateTimeStringValue = updateTimeToTenUTC(date?.dateString,time);
+    const dateTimeStringValue = updateTimeToTenUTC(date?.dateString, time);
 
     const newReservation = new Reservation({
       date: dateTimeStringValue,
@@ -66,7 +65,7 @@ exports.createReservation = async (req, res) => {
       performAt: timeStampValue,
       token: tokenExpo.token,
     };
-    
+
     sendTaskToBackend(taskData);
     res.status(201).json(newReservation);
   } catch (err) {
@@ -76,12 +75,17 @@ exports.createReservation = async (req, res) => {
 };
 
 function convertSerbianDateTimeToUTCWithSplitJoin(dateString, timeString) {
-  // Split and reformat the date string to YYYY-MM-DD
+  // Split the date string
   const dateParts = dateString.split(".");
-  const day = dateParts[0].trim().padStart(2, "0");
-  const month = parseInt(dateParts[1].trim()).toString().padStart(2, "0"); // Month is 0-indexed
-  const year = dateParts[2].trim();
-  const iso8601Date = [year, month, day].join("-");
+  const day = dateParts[0];
+  const month = parseInt(dateParts[1] - 1); // Month is 0-indexed
+  const year = dateParts[2];
+
+  // Ensure day and month are zero-padded if necessary
+  const paddedDay = day.padStart(2, "0");
+  const paddedMonth = month.toString().padStart(2, "0");
+
+  const iso8601Date = [year, paddedMonth, paddedDay].join("-");
 
   // The time string is already in HH:mm:ss format
   const iso8601Time = timeString;
@@ -91,6 +95,7 @@ function convertSerbianDateTimeToUTCWithSplitJoin(dateString, timeString) {
 
   return iso8601UTCString;
 }
+
 
 
 // Get all reservations
@@ -104,6 +109,7 @@ exports.getReservations = async (req, res) => {
   const { date, check } = req.query;
 
   const currentDate = new Date(); // This will be a valid JavaScript Date object
+  
   const utcDateTime = convertSerbianDateTimeToUTCWithSplitJoin(
     currentDate.toLocaleDateString(),
     currentDate.toLocaleTimeString()
@@ -126,7 +132,6 @@ exports.getReservations = async (req, res) => {
         .populate("service")
         .populate("employer");
     } else {
-      
       reservations = await Reservation.find({
         status: { $nin: [2] },
         date: dateValue,
@@ -141,7 +146,6 @@ exports.getReservations = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
 
 exports.patchReservationById = async (req, res) => {
   try {
