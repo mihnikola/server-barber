@@ -76,9 +76,14 @@ exports.createReservation = async (req, res) => {
 
 function convertSerbianDateTimeToUTCWithSplitJoin(dateString, timeString) {
   // Split the date string
-  const dateParts = dateString.split(".");
+  const dateParts = dateString.trim().split(".");
   const day = dateParts[0];
-  const month = parseInt(dateParts[1] - 1); // Month is 0-indexed
+
+  if (dateParts[1].trim().length > 1) {
+    month = dateParts[1]; // Month is 0-indexed
+  } else {
+    month = `0${dateParts[1].trim()}`; // Month is 0-indexed
+  }
   const year = dateParts[2];
 
   // Ensure day and month are zero-padded if necessary
@@ -96,8 +101,6 @@ function convertSerbianDateTimeToUTCWithSplitJoin(dateString, timeString) {
   return iso8601UTCString;
 }
 
-
-
 // Get all reservations
 exports.getReservations = async (req, res) => {
   const token = req.header("Authorization")
@@ -106,10 +109,11 @@ exports.getReservations = async (req, res) => {
     ? req.body.headers.Authorization
     : req.get("authorization");
   if (!token) return res.status(403).send("Access denied");
+
   const { date, check } = req.query;
 
   const currentDate = new Date(); // This will be a valid JavaScript Date object
-  
+
   const utcDateTime = convertSerbianDateTimeToUTCWithSplitJoin(
     currentDate.toLocaleDateString(),
     currentDate.toLocaleTimeString()
@@ -122,15 +126,23 @@ exports.getReservations = async (req, res) => {
     const customerId = date ? null : decoded.id;
 
     let reservations = [];
+
     if (!date) {
+      console.log("first", customerId, check, isoString);
+
       reservations = await Reservation.find({
         user: customerId,
         status: { $nin: [2] },
-        date: check === "true" ? { $gt: isoString } : { $lt: isoString },
+        date:
+          check === "true"
+            ? { $gte: isoString.trim() }
+            : { $lte: isoString.trim() },
       })
         .sort({ date: 1 })
         .populate("service")
         .populate("employer");
+
+      console.log("reservationsreservations", reservations);
     } else {
       reservations = await Reservation.find({
         status: { $nin: [2] },
@@ -143,6 +155,7 @@ exports.getReservations = async (req, res) => {
 
     res.status(200).json(reservations);
   } catch (err) {
+    console.log("sta bi", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -174,8 +187,6 @@ exports.getReservationById = async (req, res) => {
         select: "id name duration price image",
         transform: (doc) => {
           if (doc.image) {
-            // Assuming the image field stores the relative path
-            // doc.image = `http://10.58.158.121:5000/${doc.image}`; // Construct the full URL
             doc.image = prettyUrlDataImage(
               `${process.env.API_URL}/${doc.image}`
             );
