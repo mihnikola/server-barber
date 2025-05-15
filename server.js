@@ -10,6 +10,7 @@ const reservationRoutes = require("./routes/reservationRoutes");
 const timesRoutes = require("./routes/timesRoutes");
 
 const connectDB = require('./connectDB.js');
+connectDB();
 // Middleware to parse JSON
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
@@ -19,7 +20,7 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.static('public'));
 app.use('images', express.static('images'));
 
-connectDB();
+
 app.use('/api',tokenRoutes);
 app.use("/users", userRoutes);
 app.use("/services", serviceRoutes);
