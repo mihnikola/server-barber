@@ -84,8 +84,8 @@ function convertSerbianDateTimeToUTCWithSplitJoin(dateString, timeString) {
   // Split the localeDateTimeString
   const dateAndTimeParts = localeDateTimeString?.split(" "); // Split date and time
 
-  let day = dateAndTimeParts[0]?.split(".")[0];
-  let month = dateAndTimeParts[1]?.split(".")[0];
+   let day = dateAndTimeParts[1]?.split(".")[0];
+  let month = dateAndTimeParts[0]?.split(".")[0];
   let year = dateAndTimeParts[2]?.split(".")[0];
 
   let hour = dateAndTimeParts[3]?.split(":")[0];
