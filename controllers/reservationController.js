@@ -181,6 +181,7 @@ exports.getReservations = async (req, res) => {
         .populate("service")
         .populate("employer");
     } else {
+      
       reservations = await Reservation.find({
         status: { $nin: [2] },
         date: dateValue,
