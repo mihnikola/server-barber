@@ -4,6 +4,7 @@ const Token = require("../models/Token");
 const jwt = require("jsonwebtoken");
 const admin = require("firebase-admin");
 const axios = require("axios");
+const { convertSerbianDateTimeToUTCWithSplitJoin, convertSlashDateToSerbianFormat, formatAndConvertToSerbian, updateTimeToTenUTC } = require("../helpers");
 
 require("dotenv").config();
 
@@ -27,12 +28,8 @@ async function sendTaskToBackend(task) {
     });
 }
 
-function updateTimeToTenUTC(dateString, timeString) {
-  const datePart = dateString.substring(0, 10);
-  const desiredUTCTime = `${timeString}:00.000+00:00`;
-  const newUTCDateString = `${datePart}T${desiredUTCTime}`;
-  return newUTCDateString;
-}
+
+
 
 exports.createReservation = async (req, res) => {
   try {
@@ -74,54 +71,6 @@ exports.createReservation = async (req, res) => {
   }
 };
 
-function convertSerbianDateTimeToUTCWithSplitJoin(dateString, timeString) {
-  const localeDateTimeString = `${dateString} ${timeString}`;
-
-  if (!localeDateTimeString) {
-    return null;
-  }
-
-  // Split the localeDateTimeString
-  const dateAndTimeParts = localeDateTimeString?.split(" "); // Split date and time
-
-   let day = dateAndTimeParts[1]?.split(".")[0];
-  let month = dateAndTimeParts[0]?.split(".")[0];
-  let year = dateAndTimeParts[2]?.split(".")[0];
-
-  let hour = dateAndTimeParts[3]?.split(":")[0];
-  let minute = dateAndTimeParts[3]?.split(":")[1];
-  let second = dateAndTimeParts[3]?.split(":")[2];
-
-
-  // Parse day, month, year, hour, minute, and second directly
-  day = parseInt(day, 10);
-  month = parseInt(month, 10) - 1; // Month is 0-indexed
-  year = parseInt(year, 10);
-  hour = parseInt(hour, 10);
-  minute = parseInt(minute, 10);
-  second = parseInt(second, 10);
-
-  //check if parsing was successful
-  if (
-    isNaN(day) ||
-    isNaN(month) ||
-    isNaN(year) ||
-    isNaN(hour) ||
-    isNaN(minute) ||
-    isNaN(second)
-  ) {
-    console.error(`Invalid date/time value in: ${localeDateTimeString}`);
-    return null;
-  }
-
-
-  const localDate = new Date(year, month, day, hour, minute, second);
-  const utcDate = new Date(
-    localDate.getTime() - localDate.getTimezoneOffset() * 60 * 1000
-  );
-  const utcTimeString = utcDate.toISOString();
-  return utcTimeString;
-}
 
 // Get all reservations
 exports.getReservations = async (req, res) => {
@@ -137,10 +86,9 @@ exports.getReservations = async (req, res) => {
   const currentDate = new Date(); // This will be a valid JavaScript Date object
 
   const utcDateTime = convertSerbianDateTimeToUTCWithSplitJoin(
-    currentDate.toLocaleDateString(),
-    currentDate.toLocaleTimeString()
+    convertSlashDateToSerbianFormat(currentDate.toLocaleDateString()),
+    formatAndConvertToSerbian(currentDate.toLocaleTimeString()),
   );
-  const isoString = utcDateTime;
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     const dateValue = date ? date : null;
@@ -150,15 +98,14 @@ exports.getReservations = async (req, res) => {
     let reservations = [];
 
     if (!date) {
-      console.log("first", customerId, check, isoString);
 
       reservations = await Reservation.find({
         user: customerId,
         status: { $nin: [2] },
         date:
           check === "true"
-            ? { $gte: isoString }
-            : { $lte: isoString },
+            ? { $gte: utcDateTime }
+            : { $lte: utcDateTime },
       })
         .sort({ date: 1 })
         .populate("service")
