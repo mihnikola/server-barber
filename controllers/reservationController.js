@@ -97,6 +97,7 @@ exports.getReservations = async (req, res) => {
 
     let reservations = [];
 
+    console.log("utcDateTime",utcDateTime);
     if (!date) {
 
       reservations = await Reservation.find({
@@ -111,7 +112,6 @@ exports.getReservations = async (req, res) => {
         .populate("service")
         .populate("employer");
 
-      console.log("reservationsreservations", reservations);
     } else {
       reservations = await Reservation.find({
         status: { $nin: [2] },
