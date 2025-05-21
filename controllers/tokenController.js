@@ -3,14 +3,14 @@ const Token = require("../models/Token");
 // API route to send token
 
 exports.sendNotification = async (req, res) => {
-  const { token } = req.body;
+  const { token, title, content,data } = req.body;
 
   const message = {
     to: token,
     sound: "default",
-    title: "Ajmo DJUROOOO",
-    body: "Nikad ne jebi sam. SAAAAAM!!!",
-    data: { someData: "goes here" },
+    title: title,
+    body: content,
+    data: { someData: data },
   };
   await fetch("https://exp.host/--/api/v2/push/send", {
     method: "POST",
