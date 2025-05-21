@@ -147,7 +147,6 @@ function updateTimeToTenUTC(dateString, timeString) {
 }
 
 function convertSlashDateToSerbianFormat(slashDate) {
-
   if (slashDate.includes("/")) {
     const parts = slashDate.split("/");
     if (parts.length === 3) {
@@ -186,8 +185,8 @@ function convertSerbianDateTimeToUTCWithSplitJoin(dateString, timeString) {
   let second = dateAndTimeParts[1]?.split(":")[2];
 
   // Parse day, month, year, hour, minute, and second directly
-  day = parseInt(day, 10);
-  month = parseInt(month, 10) - 1; // Month is 0-indexed
+  day = parseInt(day, 10) - 1;
+  month = parseInt(month, 10); // Month is 0-indexed
   year = parseInt(year, 10);
   hour = parseInt(hour, 10);
   minute = parseInt(minute, 10);
@@ -202,11 +201,10 @@ function convertSerbianDateTimeToUTCWithSplitJoin(dateString, timeString) {
     isNaN(minute) ||
     isNaN(second)
   ) {
-    console.log("first", year, month, day, hour, minute, second);
     console.error(`Invalid date/time value in: ${localeDateTimeString}`);
     return null;
   }
-  const localDate = new Date(year, month, day, hour, minute, second);
+  const localDate = new Date(year, day, month, hour, minute, second);
   const utcDate = new Date(
     localDate.getTime() - localDate.getTimezoneOffset() * 60 * 1000
   );
