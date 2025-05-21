@@ -7,6 +7,7 @@ const tokenRoutes = require('./routes/tokenRoutes');
 const userRoutes = require("./routes/userRoutes");
 const serviceRoutes = require("./routes/serviceRoutes");
 const reservationRoutes = require("./routes/reservationRoutes");
+const notificationsRoutes = require("./routes/notificationRoutes");
 const timesRoutes = require("./routes/timesRoutes");
 
 const connectDB = require('./connectDB.js');
@@ -26,6 +27,7 @@ app.use("/users", userRoutes);
 app.use("/services", serviceRoutes);
 app.use("/reservations", reservationRoutes);
 app.use("/times", timesRoutes);
+app.use("/notifications", notificationsRoutes);
 
 // Start server
 const PORT = process.env.PORT || 3000;
