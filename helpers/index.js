@@ -145,106 +145,117 @@ function updateTimeToTenUTC(dateString, timeString) {
   const newUTCDateString = `${datePart}T${desiredUTCTime}`;
   return newUTCDateString;
 }
+function convertToISO8601(dateInput) {
+  // Helper function to parse DD/MM/YYYY, HH:mm:ss format
+  function parseSlashSeparatedDateTime(inputString) {
+    const match = inputString.match(
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4}), (\d{1,2}):(\d{1,2}):(\d{1,2})$/
+    );
+    if (match) {
+      const day = parseInt(match[1], 10);
+      const month = parseInt(match[2], 10); // Month is 1-indexed in input
+      const year = parseInt(match[3], 10);
+      const hour = parseInt(match[4], 10);
+      const minute = parseInt(match[5], 10);
+      const second = parseInt(match[6], 10);
 
-function convertSlashDateToSerbianFormat(slashDate) {
-  if (slashDate.includes("/")) {
-    const parts = slashDate.split("/");
-    if (parts.length === 3) {
-      const month = parts[0].padStart(2, "0");
-      const day = parts[1].padStart(2, "0");
-      const year = parts[2];
-      return `${day}.${month}.${year}`;
-    } else {
-      return "Invalid date format provided. Expected MM/DD/YYYY or similar.";
+      // Validate date parts for basic sanity
+      if (
+        month >= 1 &&
+        month <= 12 &&
+        day >= 1 &&
+        day <= 31 &&
+        hour >= 0 &&
+        hour <= 23 &&
+        minute >= 0 &&
+        minute <= 59 &&
+        second >= 0 &&
+        second <= 59
+      ) {
+        
+        const monthValue = month.toString().length > 1 ? month : `0${month}`;
+        const dayValue = day.toString().length > 1 ? day : `0${day}`;
+        const minuteValue = minute.toString().length > 1 ? minute : `0${minute}`;
+        const hourValue = hour.toString().length > 1 ? hour : `0${hour}`;
+
+        // Create a Date object. Month is 0-indexed in JavaScript Date constructor.
+        return `${year}-${monthValue}-${dayValue}T${hourValue}:${minuteValue}:${second}`;
+      }
     }
-  } else {
-    const parts = slashDate.split(" ");
-    const month = parts[0].split(".")[0];
-    const day = parts[1].split(".")[0];
-    const year = parts[2];
-    return `${day}.${month}.${year}`;
-  }
-}
-
-function convertSerbianDateTimeToUTCWithSplitJoin(dateString, timeString) {
-  const localeDateTimeString = `${dateString} ${timeString}`;
-  if (!localeDateTimeString) {
     return null;
   }
 
-  console.log("localeDateTimeString", localeDateTimeString);
+  // Helper function to parse DD. MM. YYYY. HH:mm:ss format
+  function parseDotSpaceSeparatedDateTime(inputString) {
+    const match = inputString.match(
+      /^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})\.\s*(\d{1,2}):(\d{1,2}):(\d{1,2})$/
+    );
+    if (match) {
+      const day = parseInt(match[1], 10);
+      const month = parseInt(match[2], 10); // Month is 1-indexed in input
+      const year = parseInt(match[3], 10);
+      const hour = parseInt(match[4], 10);
+      const minute = parseInt(match[5], 10);
+      const second = parseInt(match[6], 10);
 
-  // Split the localeDateTimeString
-  const dateAndTimeParts = localeDateTimeString?.split(" "); // Split date and time
-  let day = dateAndTimeParts[0]?.split(".")[0];
-  let month = dateAndTimeParts[0]?.split(".")[1];
-  let year = dateAndTimeParts[0]?.split(".")[2];
-
-  let hour = dateAndTimeParts[1]?.split(":")[0];
-  let minute = dateAndTimeParts[1]?.split(":")[1];
-  let second = dateAndTimeParts[1]?.split(":")[2];
-
-  // Parse day, month, year, hour, minute, and second directly
-  day = parseInt(day, 10) - 1;
-  month = parseInt(month, 10); // Month is 0-indexed
-  year = parseInt(year, 10);
-  hour = parseInt(hour, 10);
-  minute = parseInt(minute, 10);
-  second = parseInt(second, 10);
-
-  //check if parsing was successful
-  if (
-    isNaN(day) ||
-    isNaN(month) ||
-    isNaN(year) ||
-    isNaN(hour) ||
-    isNaN(minute) ||
-    isNaN(second)
-  ) {
-    console.error(`Invalid date/time value in: ${localeDateTimeString}`);
+      // Validate date parts for basic sanity
+      if (
+        month >= 1 &&
+        month <= 12 &&
+        day >= 1 &&
+        day <= 31 &&
+        hour >= 0 &&
+        hour <= 23 &&
+        minute >= 0 &&
+        minute <= 59 &&
+        second >= 0 &&
+        second <= 59
+      ) {
+        // Create a Date object. Month is 0-indexed in JavaScript Date constructor.
+        return `${year}-${month}-${day}T${hour}:${minute}:${second}`;
+      }
+    }
     return null;
   }
-  const localDate = new Date(year, day, month, hour, minute, second);
-  const utcDate = new Date(
-    localDate.getTime() - localDate.getTimezoneOffset() * 60 * 1000
-  );
-  const utcTimeString = utcDate.toISOString();
-  return utcTimeString;
-}
 
-function formatAndConvertToSerbian(dateTimeString) {
-  const parts = dateTimeString.split(" ");
-  const timePart = parts[0];
-  const ampm = parts[1];
-
-  let hour = parseInt(timePart.split(":")[0], 10);
-  const minute = parseInt(timePart.split(":")[1], 10);
-  let second = parseInt(timePart.split(":")[2], 10);
-
-  // Convert AM/PM to 24-hour format
-  if (ampm === "PM" && hour < 12) {
-    hour += 12;
-  } else if (ampm === "AM" && hour === 12) {
-    hour = 0;
+  // 1. Handle if the input is already a Date object
+  if (dateInput instanceof Date) {
+    return dateInput;
   }
-  // Change the  seconds to 28
-  second = 28;
+  // 2. Handle if the input is a number (assumed to be a Unix timestamp in milliseconds)
+  else if (typeof dateInput === "number") {
+    return new Date(dateInput);
+  }
+  // 3. Handle if the input is a string
+  else if (typeof dateInput === "string") {
+    // Try parsing specific formats in order of specificity/ambiguity
+    // First, try the new DD. MM. YYYY. HH:mm:ss format
+    const match = dateInput.match(
+      /^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})\.\s*(\d{1,2}):(\d{1,2}):(\d{1,2})$/
+    );
+    if (match) {
+      return parseDotSpaceSeparatedDateTime(dateInput);
+    } else {
+     return parseSlashSeparatedDateTime(dateInput);
+    }
+    // Attempt to create a Date object from the (potentially reformatted) string.
+  }
+  // 4. Handle unsupported input types
+  else {
+    console.warn(
+      "Unsupported input type for date conversion. Expected string, number, or Date object.",
+      typeof dateInput
+    );
+    return null;
+  }
 
-  // Format the time string
-  const formattedHour = String(hour).padStart(2, "0");
-  const formattedMinute = String(minute).padStart(2, "0");
-  const formattedSecond = String(second).padStart(2, "0");
-  const formattedTime = `${formattedHour}:${formattedMinute}:${formattedSecond}`;
 
-  return formattedTime;
 }
 
 module.exports = {
   updateTimeToTenUTC,
-  convertSerbianDateTimeToUTCWithSplitJoin,
-  formatAndConvertToSerbian,
-  convertSlashDateToSerbianFormat,
   convertToDateFormat,
+  convertToISO8601,
   getDateRange,
   getTimeValues,
   timeToParameters,
