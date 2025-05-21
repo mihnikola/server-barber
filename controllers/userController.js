@@ -56,7 +56,7 @@ exports.createUser = async (req, res) => {
     // Check if user with email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ error: "Email already in use." });
+      return res.status(202).json({ message: "Email already in use." });
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -171,18 +171,18 @@ exports.loginUser = async (req, res) => {
     const user = await User.findOne({ email }); // `findOne` is typically better if you expect a single result
 
     if (!user) {
-      return res.status(400).json({ message: "Invalid email or password" });
+      return res.status(202).json({ status:202, message: "Invalid email or password" });
     }
 
     // Compare the password with the hashed password stored in the database
     const isPasswordMatch = await bcrypt.compare(password, user.password);
 
     if (!isPasswordMatch) {
-      return res.status(400).json({ message: "Not match password" });
+      return res.status(202).json({ status:202, message: "Not match password" });
     }
 
     if (!user.isVerified) {
-      return res.status(400).json({ message: "Not verified" });
+      return res.status(202).json({ status:202, message: "Not verified" });
     }
 
 
@@ -197,7 +197,7 @@ exports.loginUser = async (req, res) => {
 
 
 
-    res.status(200).json({ token, userId: user._id });
+    res.status(200).json({ status: 200, token, userId: user._id });
     // Send the token as a response
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -216,10 +216,6 @@ exports.getUsers = async (req, res) => {
         image: prettyUrlDataImage(`${process.env.API_URL}/${user.image}`)
       };
     });
-
-    console.log("usersData",usersData)
-
-
     res.status(200).json(usersData);
   } catch (err) {
     res.status(500).json({ error: err.message });
