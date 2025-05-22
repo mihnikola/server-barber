@@ -50,6 +50,7 @@ exports.createReservation = async (req, res) => {
       user: customerId,
       customer: customerName,
       status,
+      rate: null,
     });
 
     await newReservation.save();
@@ -89,7 +90,10 @@ exports.getReservations = async (req, res) => {
       reservations = await Reservation.find({
         user: customerId,
         status: { $nin: [2] },
-        date: check === "true" ? { $gte: utcDateTime+".000+00:00" } : { $lte: utcDateTime+".000+00:00" },
+        date:
+          check === "true"
+            ? { $gte: utcDateTime + ".000+00:00" }
+            : { $lte: utcDateTime + ".000+00:00" },
       })
         .sort({ date: 1 })
         .populate("service")
@@ -112,15 +116,33 @@ exports.getReservations = async (req, res) => {
 exports.patchReservationById = async (req, res) => {
   try {
     const { id } = req.params;
-    const reservation = await Reservation.findByIdAndUpdate(
-      id,
-      { status: 2 },
-      { new: true }
-    );
+    const { status, rate } = req.body;
+
+    let reservation = null;
+    if (status === 0) {
+      reservation = await Reservation.findByIdAndUpdate(
+        id,
+        { rate },
+        { new: true }
+      );
+    } else {
+      reservation = await Reservation.findByIdAndUpdate(
+        id,
+        { status: 2 },
+        { new: true }
+      );
+    }
+
     if (!reservation) {
       return res.status(404).send("Reservation not found");
     }
-    res.status(200).json({ message: "Reservation is cancelled successfully" });
+    if (status === 0) {
+      res.status(200).json({ message: "Reservation is rated successfully" });
+    } else {
+      res
+        .status(200)
+        .json({ message: "Reservation is cancelled successfully" });
+    }
   } catch (error) {
     res.status(500).send("Server Error");
   }
