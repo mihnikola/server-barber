@@ -84,13 +84,17 @@ exports.getReservations = async (req, res) => {
   const utcDateTime = convertToISO8601(currentDate.toLocaleString("en-GB"));
 
   try {
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     const dateValue = date ? date : null;
     const emplId = date ? decoded.id : null;
     const customerId = date ? null : decoded.id;
 
     let reservations = [];
+
+
     if (!date) {
+
       reservations = await Reservation.find({
         user: customerId,
         status: { $nin: [2] },
@@ -99,7 +103,9 @@ exports.getReservations = async (req, res) => {
         .sort({ date: 1 })
         .populate("service")
         .populate("employer");
+
     } else {
+
       reservations = await Reservation.find({
         status: { $nin: [2] },
         date: dateValue,
@@ -107,11 +113,11 @@ exports.getReservations = async (req, res) => {
       })
         .populate("service") // Populate service data
         .populate("user"); // Populate employee data
+
     }
 
     res.status(200).json(reservations);
   } catch (err) {
-    console.log("sta bi", err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -143,6 +149,8 @@ exports.getReservationById = async (req, res) => {
         select: "id name duration price image",
         transform: (doc) => {
           if (doc.image) {
+            // Assuming the image field stores the relative path
+            // doc.image = `http://10.58.158.121:5000/${doc.image}`; // Construct the full URL
             doc.image = prettyUrlDataImage(
               `${process.env.API_URL}/${doc.image}`
             );
@@ -155,6 +163,7 @@ exports.getReservationById = async (req, res) => {
         select: "id name image",
         transform: (doc) => {
           if (doc.image) {
+            // Assuming the image field stores the relative path
             doc.image = prettyUrlDataImage(
               `${process.env.API_URL}/${doc.image}`
             );
