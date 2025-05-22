@@ -76,36 +76,25 @@ exports.getReservations = async (req, res) => {
     ? req.body.headers.Authorization
     : req.get("authorization");
   if (!token) return res.status(403).send("Access denied");
-
   const { date, check } = req.query;
-
   const currentDate = new Date(); // This will be a valid JavaScript Date object
-
   const utcDateTime = convertToISO8601(currentDate.toLocaleString("en-GB"));
-
   try {
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     const dateValue = date ? date : null;
     const emplId = date ? decoded.id : null;
     const customerId = date ? null : decoded.id;
-
     let reservations = [];
-
-
     if (!date) {
-
       reservations = await Reservation.find({
         user: customerId,
         status: { $nin: [2] },
-        date: check === "true" ? { $gte: utcDateTime } : { $lte: utcDateTime },
+        date: check === "true" ? { $gte: utcDateTime+".000+00:00" } : { $lte: utcDateTime+".000+00:00" },
       })
         .sort({ date: 1 })
         .populate("service")
         .populate("employer");
-
     } else {
-
       reservations = await Reservation.find({
         status: { $nin: [2] },
         date: dateValue,
@@ -113,9 +102,7 @@ exports.getReservations = async (req, res) => {
       })
         .populate("service") // Populate service data
         .populate("user"); // Populate employee data
-
     }
-
     res.status(200).json(reservations);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -150,7 +137,6 @@ exports.getReservationById = async (req, res) => {
         transform: (doc) => {
           if (doc.image) {
             // Assuming the image field stores the relative path
-            // doc.image = `http://10.58.158.121:5000/${doc.image}`; // Construct the full URL
             doc.image = prettyUrlDataImage(
               `${process.env.API_URL}/${doc.image}`
             );
