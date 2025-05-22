@@ -46,8 +46,10 @@ exports.saveToken = async (req, res) => {
     const newToken = new Token({ token: tokenExpo, user: tokenUser });
     await newToken.save();
 
-    res.status(200).send("Token saved successfully");
+    res.status(200).send({ status: 200, message: "Token saved successfully" });
   } catch (error) {
-    res.status(500).send("Token is not saved successfully");
+    res
+      .status(500)
+      .send({ status: 500, message: "Token is not saved successfully" });
   }
 };
