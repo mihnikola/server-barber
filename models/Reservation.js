@@ -9,6 +9,9 @@ const reservationSchema = new mongoose.Schema({
     type: String, 
     required: true
   },
+  rate: {
+    type: Object, 
+  },
   service: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Service',
