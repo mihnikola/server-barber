@@ -113,18 +113,8 @@ const getDateRange = (dateString) => {
   return { start, end };
 };
 
-function toLocaleDateTimeString(utcString) {
-  const date = new Date(utcString);
-  return date.toLocaleString();
-}
-
 const filterFutureTimeSlots = (timeSlots, currentTime, dateValue) => {
-  const slotTimeLocale = new Date(currentTime);
-  const slotTime = toLocaleDateTimeString(slotTimeLocale);
-
-  const now = new Date();
-  const dateS = new Date(dateValue);
-  if (toLocaleDateTimeString(dateS) > toLocaleDateTimeString(now)) {
+  if (currentTime < dateValue) {
     return timeSlots;
   }
 
@@ -146,7 +136,6 @@ function updateTimeToTenUTC(dateString, timeString) {
   return newUTCDateString;
 }
 function convertToISO8601(dateInput) {
-
   // Helper function to parse DD/MM/YYYY, HH:mm:ss format
   function parseSlashSeparatedDateTime(inputString) {
     const match = inputString.match(
@@ -173,15 +162,16 @@ function convertToISO8601(dateInput) {
         second >= 0 &&
         second <= 59
       ) {
-        
         const monthValue = month.toString().length > 1 ? month : `0${month}`;
         const dayValue = day.toString().length > 1 ? day : `0${day}`;
-        const minuteValue = minute.toString().length > 1 ? minute : `0${minute}`;
+        const minuteValue =
+          minute.toString().length > 1 ? minute : `0${minute}`;
         const hourValue = hour.toString().length > 1 ? hour : `0${hour}`;
-        const secondValue = second.toString().length > 1 ? second : `0${second}`;
+        const secondValue =
+          second.toString().length > 1 ? second : `0${second}`;
 
         // Create a Date object. Month is 0-indexed in JavaScript Date constructor.
-        
+
         return `${year}-${monthValue}-${dayValue}T${hourValue}:${minuteValue}:${secondValue}`;
       }
     }
@@ -214,12 +204,13 @@ function convertToISO8601(dateInput) {
         second >= 0 &&
         second <= 59
       ) {
-
         const monthValue = month.toString().length > 1 ? month : `0${month}`;
         const dayValue = day.toString().length > 1 ? day : `0${day}`;
-        const minuteValue = minute.toString().length > 1 ? minute : `0${minute}`;
+        const minuteValue =
+          minute.toString().length > 1 ? minute : `0${minute}`;
         const hourValue = hour.toString().length > 1 ? hour : `0${hour}`;
-        const secondValue = second.toString().length > 1 ? second : `0${second}`;
+        const secondValue =
+          second.toString().length > 1 ? second : `0${second}`;
 
         // Create a Date object. Month is 0-indexed in JavaScript Date constructor.
         return `${year}-${monthValue}-${dayValue}T${hourValue}:${minuteValue}:${secondValue}`;
@@ -247,7 +238,7 @@ function convertToISO8601(dateInput) {
     if (match) {
       return parseDotSpaceSeparatedDateTime(dateInput);
     } else {
-     return parseSlashSeparatedDateTime(dateInput);
+      return parseSlashSeparatedDateTime(dateInput);
     }
     // Attempt to create a Date object from the (potentially reformatted) string.
   }
@@ -259,8 +250,6 @@ function convertToISO8601(dateInput) {
     );
     return null;
   }
-
-
 }
 
 module.exports = {
