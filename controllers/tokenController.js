@@ -41,7 +41,7 @@ exports.saveToken = async (req, res) => {
   try {
     const tokens = await Token.findOne({ token: tokenExpo });
     if (tokens) {
-      return res.status(200).send("Token already exist");
+      return res.status(200).send({ status: 200, message: "Token already exist"});
     }
     const newToken = new Token({ token: tokenExpo, user: tokenUser });
     await newToken.save();
