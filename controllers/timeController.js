@@ -6,6 +6,7 @@ const {
   getDateRange,
   convertToDateFormat,
   filterFutureTimeSlots,
+  convertToISO8601,
 } = require("../helpers");
 const Reservation = require("../models/Reservation");
 const Time = require("../models/Time");
@@ -23,7 +24,6 @@ exports.createTime = async (req, res) => {
 };
 
 exports.getTimes = async (req, res) => {
-  const now = new Date();
   const token = req.header("Authorization")
     ? req.header("Authorization").split(" ")[1]
     : req.body.headers.Authorization
@@ -45,6 +45,8 @@ exports.getTimes = async (req, res) => {
       serviceDuration: parseInt(serviceDurationFromQuery, 10),
     };
     const { date, serviceDuration, employer } = result;
+
+  const now = new Date().toLocaleString('en-GB');
 
     let decoded = null;
     if (token) {
@@ -93,13 +95,12 @@ exports.getTimes = async (req, res) => {
         };
       });
       getTimeValues(timeRanges).then((result) => {
-        const futureSlots = filterFutureTimeSlots(result, now, date);
+        const futureSlots = filterFutureTimeSlots(result, convertToISO8601(now), date);
         res.status(200).json(futureSlots);
       });
     } else {
       const times = await Time.find();
-
-      const futureSlots = filterFutureTimeSlots(times, now, date);
+      const futureSlots = filterFutureTimeSlots(times, convertToISO8601(now), date);
 
       res.status(200).json(futureSlots);
     }
