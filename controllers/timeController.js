@@ -46,6 +46,8 @@ exports.getTimes = async (req, res) => {
     };
     const { date, serviceDuration, employer } = result;
 
+
+
   const now = new Date().toLocaleString('en-GB');
 
     let decoded = null;
