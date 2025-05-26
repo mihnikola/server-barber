@@ -114,18 +114,23 @@ const getDateRange = (dateString) => {
 };
 
 const filterFutureTimeSlots = (timeSlots, currentTime, dateValue) => {
+  const timeData = currentTime.split("T")[1];
+
   if (currentTime < dateValue) {
     return timeSlots;
   }
 
-  return timeSlots.filter((timeSlot) => {
-    const [hours, minutes] = timeSlot.value.split(":").map(Number);
-    slotTimeLocale.setHours(hours);
-    slotTimeLocale.setMinutes(minutes);
-    slotTimeLocale.setSeconds(0);
-    slotTimeLocale.setMilliseconds(0);
+  const [cutoffHours, cutoffMinutes] = timeData.split(":").map(Number);
+  const cutoffDateTime = new Date();
+  cutoffDateTime.setHours(cutoffHours, cutoffMinutes, 0, 0);
 
-    return slotTimeLocale > currentTime;
+  return timeSlots.filter((timeSlot) => {
+    const slotDateTime = new Date();
+
+    const [slotHours, slotMinutes] = timeSlot.value.split(":").map(Number);
+    slotDateTime.setHours(slotHours, slotMinutes, 0, 0);
+
+    return slotDateTime.getTime() > cutoffDateTime.getTime();
   });
 };
 
