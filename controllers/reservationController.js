@@ -14,7 +14,18 @@ if (!admin.apps.length) {
     credential: admin.credential.cert(serviceAccount),
   });
 }
-
+async function deleteAppointment(tokenExpo, dateTimeStamp) {
+  const functionUrl =
+    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/deleteAppointment";
+  await axios
+    .post(functionUrl, { tokenExpo, dateTimeStamp })
+    .then((res) => {
+      console.log("solve", res.data.message);
+    })
+    .catch((err) => {
+      console.log("err", err);
+    });
+}
 async function sendTaskToBackend(task) {
   const functionUrl =
     "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/addTaskToFirestore";
@@ -114,6 +125,13 @@ exports.getReservations = async (req, res) => {
 };
 
 exports.patchReservationById = async (req, res) => {
+  const token = req.header("Authorization")
+    ? req.header("Authorization").split(" ")[1]
+    : req.body.headers.Authorization
+    ? req.body.headers.Authorization
+    : req.get("authorization");
+  if (!token) return res.status(403).send("Access denied");
+
   try {
     const { id } = req.params;
     const { status, rate } = req.body;
@@ -139,6 +157,11 @@ exports.patchReservationById = async (req, res) => {
     if (status === 0) {
       res.status(200).json({ message: "Reservation is rated successfully" });
     } else {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+      const tokenExpo = await Token.findOne({ user: decoded.id });
+
+      deleteAppointment(tokenExpo.token, reservation.date);
+
       res
         .status(200)
         .json({ message: "Reservation is cancelled successfully" });
