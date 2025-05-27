@@ -76,7 +76,7 @@ exports.putService = async (req, res) => {
 // Get all services
 exports.getServices = async (req, res) => {
   try {
-    const services = await Service.find();
+    const services = await Service.find().maxTimeMS(30000);
     const servicesData = services.map((item) => {
       return {
         id: item._id,
