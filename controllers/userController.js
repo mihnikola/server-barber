@@ -207,7 +207,7 @@ exports.loginUser = async (req, res) => {
 
 exports.getUsers = async (req, res) => {
   try {
-    const users = await User.find({ role: { $exists: true, $ne: null } });
+    const users = await User.find({ role: { $exists: true, $ne: null } }).size(10);
     const usersData = users.map((user) => {
       return {
         id: user._id,
