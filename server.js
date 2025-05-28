@@ -45,8 +45,8 @@ app.use(express.json({ limit: "50mb" }));
 app.use(express.static('public'));
 app.use('images', express.static('images'));
 
-app.get('/', async (req, res) => {
- await connectDB();
+app.get('/',  (req, res) => {
+ connectDB();
 })
 
 app.use('/api',tokenRoutes);
