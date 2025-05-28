@@ -113,24 +113,68 @@ const getDateRange = (dateString) => {
   return { start, end };
 };
 
-const filterFutureTimeSlots = (timeSlots, currentTime, dateValue) => {
-  const timeData = currentTime.split("T")[1];
+// const filterFutureTimeSlots = (timeSlots, currentTime, dateValue) => {
+//   if (currentTime < dateValue) {
+//     return timeSlots;
+//   }
 
-  if (currentTime < dateValue) {
-    return timeSlots;
+//   const cutoffDateTime = new Date().toLocaleString('en-GB');
+
+//   return timeSlots.filter((timeSlot) => {
+
+//     const [slotHours, slotMinutes] = timeSlot.value.split(":").map(Number);
+//     currentTime.setHours(slotHours);
+//     currentTime.setMinutes(slotMinutes);
+
+//     return currentTime.getTime() > cutoffDateTime.getTime();
+//   });
+// };
+
+const filterFutureTimeSlots = (timeSlots, currentTime, dateValue) => {
+
+  const mySpecificTime = new Date(currentTime);
+  const mySpecificTimeDateValue = new Date(dateValue);
+  if (!(mySpecificTime instanceof Date) || isNaN(mySpecificTime.getTime())) {
+    console.error(
+      "filterFutureTimeSlots: 'currentTime' mora biti validan Date objekat."
+    );
+    return []; // Vraća prazan niz ili baca grešku
+  }
+  if (
+    !(mySpecificTimeDateValue instanceof Date) ||
+    isNaN(mySpecificTimeDateValue.getTime())
+  ) {
+    console.error(
+      "filterFutureTimeSlots: 'dateValue' mora biti validan Date objekat."
+    );
+    return []; // Vraća prazan niz ili baca grešku
   }
 
-  const [cutoffHours, cutoffMinutes] = timeData.split(":").map(Number);
-  const cutoffDateTime = new Date();
-  cutoffDateTime.setHours(cutoffHours, cutoffMinutes, 0, 0);
+  // === PRIPREMA DATUMA ZA POREĐENJE ===
+  // Normalizuj 'dateValue' na početak odabranog dana (00:00:00)
+  const selectedDateStart = new Date(mySpecificTimeDateValue);
+
+  // Normalizuj 'currentTime' na početak tekućeg dana (00:00:00)
+  const currentDayStart = new Date(mySpecificTime);
+
+  // === LOGIKA FILTRIRANJA ===
+
+  // 1. Scenario: Ako je odabrani datum u budućnosti
+  // (npr. odabrali ste sutra, prekosutra itd.)
+  if (selectedDateStart.getTime() > currentDayStart.getTime()) {
+    return timeSlots; // Svi slotovi su dostupni
+  }
+
 
   return timeSlots.filter((timeSlot) => {
-    const slotDateTime = new Date();
-
     const [slotHours, slotMinutes] = timeSlot.value.split(":").map(Number);
-    slotDateTime.setHours(slotHours, slotMinutes, 0, 0);
 
-    return slotDateTime.getTime() > cutoffDateTime.getTime();
+    // Kreiraj NOVI Date objekat za tekući dan sa vremenom slota
+    // Važno: Koristite 'new Date(currentTime)' da bi se zadržala informacija o datumu
+    const slotDateTimeOnSelectedDay = new Date(mySpecificTime);
+    slotDateTimeOnSelectedDay.setHours(slotHours, slotMinutes, 0, 0); // Podesi sate, minute, sekunde, milisekunde
+
+    return slotDateTimeOnSelectedDay.getTime() > mySpecificTime.getTime();
   });
 };
 
