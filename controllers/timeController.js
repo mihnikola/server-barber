@@ -35,8 +35,8 @@ exports.getTimes = async (req, res) => {
     const dateFromQuery = req.query.date;
     const employerIdFromQuery = req.query["employer[id]"];
     const serviceDurationFromQuery = req.query["service[duration]"];
+    const now = new Date();
 
-    
     const result = {
       date: dateFromQuery,
       employer: {
@@ -46,15 +46,11 @@ exports.getTimes = async (req, res) => {
     };
     const { date, serviceDuration, employer } = result;
 
-
-
-  const now = new Date().toLocaleString('en-GB');
-
     let decoded = null;
     if (token) {
       decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     }
-    const emplId = employer ?  employer.id : decoded.id;
+    const emplId = employer ? employer.id : decoded.id;
     const { start, end } = getDateRange(convertToDateFormat(date));
 
     const reservation = await Reservation.find({
@@ -96,13 +92,14 @@ exports.getTimes = async (req, res) => {
           end: resultTime,
         };
       });
+
       getTimeValues(timeRanges).then((result) => {
-        const futureSlots = filterFutureTimeSlots(result, convertToISO8601(now), date);
+        const futureSlots = filterFutureTimeSlots(result, now, date);
         res.status(200).json(futureSlots);
       });
     } else {
       const times = await Time.find();
-      const futureSlots = filterFutureTimeSlots(times, convertToISO8601(now), date);
+      const futureSlots = filterFutureTimeSlots(times, now, date);
 
       res.status(200).json(futureSlots);
     }
