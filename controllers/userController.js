@@ -49,14 +49,14 @@ exports.createUser = async (req, res) => {
   if (!name || !email || !password) {
     return res
       .status(400)
-      .json({ error: "Name, email, and password are required." });
+      .json({ message: "Name, email, and password are required." });
   }
 
   try {
     // Check if user with email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(202).json({ message: "Email already in use." });
+      return res.status(202).json({ message: "Email already exists." });
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -76,8 +76,7 @@ exports.createUser = async (req, res) => {
         "User created successfully!",
     });
   } catch (err) {
-    console.error("Error:", err); // Log error to console
-    res.status(500).json({ error: err.message });
+    res.status(500).send({ status: 500, message: "Something Went Wrong, Please Try Again" });
   }
 };
 
@@ -171,21 +170,19 @@ exports.loginUser = async (req, res) => {
     const user = await User.findOne({ email }); // `findOne` is typically better if you expect a single result
 
     if (!user) {
-      return res.status(202).json({ status:202, message: "Invalid email or password" });
+      return res.status(202).json({ status:202, message: "Incorrect email or password" });
     }
 
     // Compare the password with the hashed password stored in the database
     const isPasswordMatch = await bcrypt.compare(password, user.password);
 
     if (!isPasswordMatch) {
-      return res.status(202).json({ status:202, message: "Not match password" });
+      return res.status(202).json({ status:202, message: "Incorrect password" });
     }
 
     if (!user.isVerified) {
       return res.status(202).json({ status:202, message: "Not verified" });
     }
-
-
     const userData = {
       id: user._id.toHexString(),
       email: user.email,
@@ -194,20 +191,16 @@ exports.loginUser = async (req, res) => {
     const token = jwt.sign(userData, process.env.JWT_SECRET_KEY, {
       expiresIn: "10000000m",
     });
-
-
-
     res.status(200).json({ status: 200, token, userId: user._id });
-    // Send the token as a response
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).send({ status: 500, message: "Something Went Wrong, Please Try Again" });
   }
 };
 
 
 exports.getUsers = async (req, res) => {
   try {
-    const users = await User.find({ role: { $exists: true, $ne: null } }).maxTimeMS(30000);
+    const users = await User.find({ role: { $exists: true, $ne: null } });
     const usersData = users.map((user) => {
       return {
         id: user._id,
