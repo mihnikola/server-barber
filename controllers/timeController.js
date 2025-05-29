@@ -46,6 +46,8 @@ exports.getTimes = async (req, res) => {
     };
     const { date, serviceDuration, employer } = result;
 
+        console.log("getTimes parameters++",result)
+
     let decoded = null;
     if (token) {
       decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
