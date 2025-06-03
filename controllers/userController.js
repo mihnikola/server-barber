@@ -209,7 +209,8 @@ exports.getUsers = async (req, res) => {
         image: prettyUrlDataImage(`${process.env.API_URL}/${user.image}`)
       };
     });
-    res.status(200).json(usersData);
+      res.status(200).json({ status: 200, data: usersData });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
