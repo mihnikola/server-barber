@@ -50,8 +50,8 @@ exports.createReservation = async (req, res) => {
     const customerId = customer !== "" ? null : tokenExpo.user;
     const employerData = employerId === "" ? decoded.id : employerId;
     const status = customer !== "" ? 1 : 0;
-    const timeStampValue = convertToTimeStamp(date?.dateString, time);
-    const dateTimeStringValue = updateTimeToTenUTC(date?.dateString, time);
+    const timeStampValue = convertToTimeStamp(date?.dateString || date, time);
+    const dateTimeStringValue = updateTimeToTenUTC(date?.dateString || date, time);
 
     const newReservation = new Reservation({
       date: dateTimeStringValue,
