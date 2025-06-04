@@ -121,9 +121,9 @@ const filterFutureTimeSlots = (timeSlots, currentTime, dateValue) => {
     return timeSlots;
   }
   const timestamp = convertToISO8601(currentTime).split("T")[1];
-  const [hours, minutes] = timestamp.split(":").map(Number);
 
   const dateTimeStamp = new Date(dateValue);
+  const [hours, minutes] = timestamp.split(":").map(Number);
 
   return timeSlots.filter((timeSlot) => {
     const [slotHours, slotMinutes] = timeSlot.value.split(":").map(Number);
@@ -133,13 +133,21 @@ const filterFutureTimeSlots = (timeSlots, currentTime, dateValue) => {
     dateTimeStamp.setSeconds(0);
     dateTimeStamp.setMilliseconds(0);
 
-    if (dateTimeStamp.getHours() > hours) {
-      return true;
-    }
-
+    console.log(
+      "dateTimeStamp.getHours()+++",
+      dateTimeStamp.getHours(),
+      "hours---",
+      hours,
+      "dateTimeStamp.getMinutes()+++",
+      dateTimeStamp.getMinutes(),
+      "minutes-----",
+      minutes
+    );
+    
     if (
-      dateTimeStamp.getHours() === hours &&
-      dateTimeStamp.getMinutes() > minutes
+      dateTimeStamp.getHours() > hours ||
+      (dateTimeStamp.getHours() === hours &&
+        dateTimeStamp.getMinutes() > minutes)
     ) {
       return true;
     }
