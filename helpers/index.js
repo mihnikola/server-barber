@@ -113,21 +113,15 @@ const getDateRange = (dateString) => {
   return { start, end };
 };
 
-const filterFutureTimeSlots = (timeSlots, dateValue) => {
-  const localeDateTimeNow = new Date().toLocaleString();
-
-  console.log("localeDateTimeNow+++", localeDateTimeNow);
-  console.log(
-    "convertToISO8601(currenlocaleDateTimeNowtTime)+++",
-    convertToISO8601(localeDateTimeNow)
-  );
-  const date1 = convertToISO8601(localeDateTimeNow).split("T")[0];
+const filterFutureTimeSlots = (timeSlots, currentTime, dateValue) => {
+ 
+  const date1 = currentTime.split("T")[0];
   const date2 = dateValue.split("T")[0];
 
   if (new Date(date2) > new Date(date1)) {
     return timeSlots;
   }
-  const timestamp = convertToISO8601(localeDateTimeNow).split("T")[1];
+  const timestamp = currentTime.split("T")[1];
 
   const dateTimeStamp = new Date(dateValue);
   const [hours, minutes] = timestamp.split(":").map(Number);
@@ -140,16 +134,6 @@ const filterFutureTimeSlots = (timeSlots, dateValue) => {
     dateTimeStamp.setSeconds(0);
     dateTimeStamp.setMilliseconds(0);
 
-    console.log(
-      "dateTimeStamp.getHours()+++",
-      dateTimeStamp.getHours(),
-      "hours---",
-      hours,
-      "dateTimeStamp.getMinutes()+++",
-      dateTimeStamp.getMinutes(),
-      "minutes",
-      minutes
-    );
     if (
       dateTimeStamp.getHours() > hours ||
       (dateTimeStamp.getHours() === hours &&
@@ -166,6 +150,7 @@ function updateTimeToTenUTC(dateString, timeString) {
   const newUTCDateString = `${datePart}T${desiredUTCTime}`;
   return newUTCDateString;
 }
+
 function convertToISO8601(dateInput) {
 
   // Helper function to parse DD/MM/YYYY, HH:mm:ss format
