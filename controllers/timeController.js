@@ -33,6 +33,7 @@ exports.getTimes = async (req, res) => {
 
   try {
     const dateFromQuery = req.query.date;
+    const currentDateTimeStampValue = req.query.dateTimeStampValue;
     const employerIdFromQuery = req.query["employer[id]"];
     const serviceDurationFromQuery = req.query["service[duration]"];
 
@@ -94,12 +95,12 @@ exports.getTimes = async (req, res) => {
       });
 
       getTimeValues(timeRanges).then((result) => {
-        const futureSlots = filterFutureTimeSlots(result, date);
+        const futureSlots = filterFutureTimeSlots(result, currentDateTimeStampValue, date);
         res.status(200).json(futureSlots);
       });
     } else {
       const times = await Time.find();
-      const futureSlots = filterFutureTimeSlots(times, date);
+      const futureSlots = filterFutureTimeSlots(times,currentDateTimeStampValue,  date);
 
       res.status(200).json(futureSlots);
     }
