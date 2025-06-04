@@ -113,16 +113,21 @@ const getDateRange = (dateString) => {
   return { start, end };
 };
 
-const filterFutureTimeSlots = (timeSlots, currentTime, dateValue) => {
-  console.log("currentTime+++",currentTime)
-  console.log("convertToISO8601(currentTime)+++",convertToISO8601(currentTime))
-  const date1 = convertToISO8601(currentTime).split("T")[0];
+const filterFutureTimeSlots = (timeSlots, dateValue) => {
+  const localeDateTimeNow = new Date().toLocaleString("en-GB");
+
+  console.log("localeDateTimeNow+++", localeDateTimeNow);
+  console.log(
+    "convertToISO8601(currenlocaleDateTimeNowtTime)+++",
+    convertToISO8601(localeDateTimeNow)
+  );
+  const date1 = convertToISO8601(localeDateTimeNow).split("T")[0];
   const date2 = dateValue.split("T")[0];
 
   if (new Date(date2) > new Date(date1)) {
     return timeSlots;
   }
-  const timestamp = convertToISO8601(currentTime).split("T")[1];
+  const timestamp = convertToISO8601(localeDateTimeNow).split("T")[1];
 
   const dateTimeStamp = new Date(dateValue);
   const [hours, minutes] = timestamp.split(":").map(Number);
