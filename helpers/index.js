@@ -268,7 +268,7 @@ function convertToISO8601(dateInput) {
       /^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})\.\s*(\d{1,2}):(\d{1,2}):(\d{1,2})$/
     );
 
-    const match2 = inputString.match(
+    const match2 = dateInput.match(
       /^(\d{1,2})\/(\d{1,2})\/(\d{4}), (\d{1,2}):(\d{1,2}):(\d{1,2})$/
     );
 
