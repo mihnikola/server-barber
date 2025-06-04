@@ -54,6 +54,7 @@ const PORT = process.env.PORT || 3000;
 async function startApp() {
   const dbConnected = await connectDB(); // Pokušaj konekcije sa bazom podataka
 
+  
   if (!dbConnected) {
     // Ako je konekcija sa bazom uspela, pokreni server
     app.listen(PORT, () => {
