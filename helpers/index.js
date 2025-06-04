@@ -114,7 +114,7 @@ const getDateRange = (dateString) => {
 };
 
 const filterFutureTimeSlots = (timeSlots, dateValue) => {
-  const localeDateTimeNow = new Date().toLocaleString("en-GB");
+  const localeDateTimeNow = new Date().toLocaleString();
 
   console.log("localeDateTimeNow+++", localeDateTimeNow);
   console.log(
