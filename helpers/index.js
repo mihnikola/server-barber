@@ -167,7 +167,6 @@ function updateTimeToTenUTC(dateString, timeString) {
   return newUTCDateString;
 }
 function convertToISO8601(dateInput) {
-  function parseLocaleDateTime(inputString) {}
 
   // Helper function to parse DD/MM/YYYY, HH:mm:ss format
   function parseSlashSeparatedDateTime(inputString) {
