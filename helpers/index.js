@@ -114,6 +114,8 @@ const getDateRange = (dateString) => {
 };
 
 const filterFutureTimeSlots = (timeSlots, currentTime, dateValue) => {
+  console.log("currentTime+++",currentTime)
+  console.log("convertToISO8601(currentTime)+++",convertToISO8601(currentTime))
   const date1 = convertToISO8601(currentTime).split("T")[0];
   const date2 = dateValue.split("T")[0];
 
@@ -140,10 +142,9 @@ const filterFutureTimeSlots = (timeSlots, currentTime, dateValue) => {
       hours,
       "dateTimeStamp.getMinutes()+++",
       dateTimeStamp.getMinutes(),
-      "minutes-----",
+      "minutes",
       minutes
     );
-    
     if (
       dateTimeStamp.getHours() > hours ||
       (dateTimeStamp.getHours() === hours &&
