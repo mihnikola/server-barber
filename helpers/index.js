@@ -167,6 +167,8 @@ function updateTimeToTenUTC(dateString, timeString) {
   return newUTCDateString;
 }
 function convertToISO8601(dateInput) {
+  function parseLocaleDateTime(inputString) {}
+
   // Helper function to parse DD/MM/YYYY, HH:mm:ss format
   function parseSlashSeparatedDateTime(inputString) {
     const match = inputString.match(
@@ -266,11 +268,19 @@ function convertToISO8601(dateInput) {
     const match = dateInput.match(
       /^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})\.\s*(\d{1,2}):(\d{1,2}):(\d{1,2})$/
     );
+
+    const match2 = inputString.match(
+      /^(\d{1,2})\/(\d{1,2})\/(\d{4}), (\d{1,2}):(\d{1,2}):(\d{1,2})$/
+    );
+
     if (match) {
       return parseDotSpaceSeparatedDateTime(dateInput);
-    } else {
+    }
+    if (match2) {
       return parseSlashSeparatedDateTime(dateInput);
     }
+    return dateInput;
+
     // Attempt to create a Date object from the (potentially reformatted) string.
   }
   // 4. Handle unsupported input types
