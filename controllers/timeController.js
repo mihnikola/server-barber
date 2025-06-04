@@ -35,7 +35,6 @@ exports.getTimes = async (req, res) => {
     const dateFromQuery = req.query.date;
     const employerIdFromQuery = req.query["employer[id]"];
     const serviceDurationFromQuery = req.query["service[duration]"];
-    const localeDateTimeNow = new Date().toLocaleString('en-GB');
 
     const result = {
       date: dateFromQuery,
@@ -95,12 +94,12 @@ exports.getTimes = async (req, res) => {
       });
 
       getTimeValues(timeRanges).then((result) => {
-        const futureSlots = filterFutureTimeSlots(result, localeDateTimeNow, date);
+        const futureSlots = filterFutureTimeSlots(result, date);
         res.status(200).json(futureSlots);
       });
     } else {
       const times = await Time.find();
-      const futureSlots = filterFutureTimeSlots(times, localeDateTimeNow, date);
+      const futureSlots = filterFutureTimeSlots(times, date);
 
       res.status(200).json(futureSlots);
     }
