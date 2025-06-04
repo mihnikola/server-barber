@@ -88,9 +88,8 @@ exports.getReservations = async (req, res) => {
     ? req.body.headers.Authorization
     : req.get("authorization");
   if (!token) return res.status(403).send("Access denied");
-  const { date, check } = req.query;
-  const currentDate = new Date(); // This will be a valid JavaScript Date object
-  const utcDateTime = convertToISO8601(currentDate.toLocaleString("en-GB"));
+  const { date, check, dateTimeStampValue } = req.query;
+  const utcDateTime = dateTimeStampValue;
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     const dateValue = date ? date : null;
