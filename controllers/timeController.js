@@ -6,7 +6,6 @@ const {
   getDateRange,
   convertToDateFormat,
   filterFutureTimeSlots,
-  convertToISO8601,
 } = require("../helpers");
 const Reservation = require("../models/Reservation");
 const Time = require("../models/Time");
