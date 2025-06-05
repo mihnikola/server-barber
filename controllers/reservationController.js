@@ -67,6 +67,7 @@ exports.createReservation = async (req, res) => {
     await newReservation.save();
 
     const taskData = {
+      userId: decoded.id,
       status: "scheduled",
       performAt: timeStampValue,
       token: tokenExpo.token,
