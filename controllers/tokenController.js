@@ -41,10 +41,10 @@ async function updateTokenFirebase(userId, token) {
   await axios
     .post(functionUrl, { userId, token })
     .then((res) => {
-      console.log("updateTokenFirebase solve", res.data.message);
+      return res.message;
     })
     .catch((err) => {
-      console.log("err", err);
+      return err;
     });
 }
 
@@ -59,7 +59,8 @@ exports.saveToken = async (req, res) => {
         { $set: { token: tokenExpo } },
         { new: true }
       );
-      updateTokenFirebase(tokenUser, tokenExpo);
+      const messageFirebase = await updateTokenFirebase(tokenUser, tokenExpo);
+      console.log("updateTokenFirebase+++", messageFirebase);
 
       return res
         .status(200)
