@@ -1,11 +1,35 @@
-const User = require("../models/User");
-var bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-require("dotenv").config();
-const { prettyUrlDataImage } = require("../helpers");
+import User from '../models/User.js'; // Assuming User model also uses ES modules
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+import path from 'path'; // Needed for path.extname in multer
+import { put } from '@vercel/blob';
+import multer from 'multer';
+
+export const patchUser = async (req, res) => {
+
+  try {
+    const { id } = req.params;
+    const { name, image } = req.body.params;
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { name, image },
+      { new: true }
+    );
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+
+    res.status(200).json({ message: "User updated successfully" });
+  } catch (error) {
+    res.status(500).send("Server Error");
+  }
+};
+
 
 // Create a new admin user
-exports.createAdminUser = async (req, res) => {
+export const createAdminUser = async (req, res) => {
   const { name, email, password } = req.body;
 
   if (!name || !email || !password) {
@@ -42,7 +66,7 @@ exports.createAdminUser = async (req, res) => {
 };
 
 // Create a new user
-exports.createUser = async (req, res) => {
+export const createUser = async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password) {
     return res
@@ -67,8 +91,6 @@ exports.createUser = async (req, res) => {
       isVerified: true,
     });
     await newUser.save();
-
-   
 
     res.status(201).json({
       message: "User created successfully!",
@@ -115,7 +137,7 @@ exports.createUser = async (req, res) => {
 // };
 
 //loginAdminUser
-exports.loginAdminUser = async (req, res) => {
+export const loginAdminUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -160,7 +182,7 @@ exports.loginAdminUser = async (req, res) => {
 };
 
 // Login user
-exports.loginUser = async (req, res) => {
+export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
     // Find the user in the "database"
@@ -189,8 +211,6 @@ exports.loginUser = async (req, res) => {
       email: user.email,
     };
 
-
-
     // Create JWT token
     const token = jwt.sign(userData, process.env.JWT_SECRET_KEY, {
       expiresIn: "10000000m",
@@ -203,7 +223,7 @@ exports.loginUser = async (req, res) => {
   }
 };
 
-exports.getUsers = async (req, res) => {
+export const getUsers = async (req, res) => {
   try {
     const users = await User.find({ role: { $exists: true, $ne: null } });
     const usersData = users.map((user) => {
@@ -220,7 +240,7 @@ exports.getUsers = async (req, res) => {
   }
 };
 
-exports.getUser = async (req, res) => {
+export const getUser = async (req, res) => {
   try {
     const token = req.params.id;
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
@@ -233,22 +253,69 @@ exports.getUser = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-exports.patchUser = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, image } = req.body.params;
 
-    const user = await User.findByIdAndUpdate(
-      id,
-      { name, image },
-      { new: true }
-    );
-    if (!user) {
-      return res.status(404).send("User not found");
+const uploadMiddleware = multer({
+  storage: multer.memoryStorage(), // Store the file in memory
+  limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB (5 * 1024 * 1024 bytes)
+  fileFilter: function (req, file, cb) {
+    // Define a regular expression to allow only common image file types (JPEG, JPG, PNG, GIF)
+    const filetypes = /jpeg|jpg|png|gif/;
+    // Test the file's MIME type against the allowed types
+    const mimetype = filetypes.test(file.mimetype);
+    // Test the file's extension (converted to lowercase) against the allowed types
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+
+    if (mimetype && extname) {
+      return cb(null, true); // If both MIME type and extension are valid, accept the file
+    } else {
+      // If the file is not an allowed image type, reject it with an error message
+      cb(new Error('Only images (JPEG, PNG, GIF) are allowed!'));
     }
+  }
+});
+export const uploadUserImage = uploadMiddleware.single('image');
 
-    res.status(200).json({ message: "User updated successfully" });
-  } catch (error) {
-    res.status(500).send("Server Error");
+export const uploadImage = async (req, res) => {
+  // Check if a file was successfully attached to the request by Multer.
+  // This could be null if no file was sent, or if the field name was incorrect.
+  if (!req.file) {
+    return res.status(400).json({ message: 'No file selected for upload or incorrect field name.' });
+  }
+
+  // Retrieve the Vercel Blob Read/Write Token from environment variables.
+  // This token is essential for authenticating your application with Vercel Blob Storage.
+  // Make sure to configure BLOB_READ_WRITE_TOKEN in your .env file for local development
+  // and in your Vercel project settings for deployment.
+  const vercelBlobToken = process.env.BLOB_READ_WRITE_TOKEN;
+
+  // If the Vercel Blob token is not configured, send a server configuration error.
+  if (!vercelBlobToken) {
+    console.error('Vercel Blob token is not set. Please set BLOB_READ_WRITE_TOKEN environment variable.');
+    return res.status(500).json({ message: 'Server configuration error: Vercel Blob token missing.' });
+  }
+
+  try {
+    // Call the `put` function from the @vercel/blob SDK to upload the file buffer.
+    // `req.file.originalname` is used as the desired filename in Vercel Blob storage.
+    // `req.file.buffer` contains the binary content of the uploaded image.
+    const blob = await put(req.file.originalname, req.file.buffer, {
+      access: 'public', // Set the access level to 'public' so the image can be viewed via its URL
+      token: vercelBlobToken, // Pass the authentication token
+      contentType: req.file.mimetype, // Set the appropriate MIME type for the uploaded file
+    });
+
+    console.log('File uploaded to Vercel Blob successfully. URL:', blob.url);
+    // Send a successful JSON response back to the client, including the Blob's public URL.
+    res.status(200).json({
+      message: 'File uploaded to Vercel Blob successfully!',
+      filename: req.file.originalname,
+      blobUrl: blob.url, // The publicly accessible URL of the uploaded image
+      pathname: blob.pathname, // The unique path of the blob within your Vercel storage
+    });
+  } catch (blobError) {
+    // Catch and log any errors that occur during the actual upload to Vercel Blob
+    console.error('Error uploading to Vercel Blob:', blobError);
+    // Send a 500 status code indicating an internal server error during the upload process
+    res.status(500).json({ message: `Failed to upload to Vercel Blob: ${blobError.message}` });
   }
 };
