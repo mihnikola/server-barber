@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import path from 'path'; // Needed for path.extname in multer
 import { put } from '@vercel/blob';
 import multer from 'multer';
+const { prettyUrlDataImage } = require("../helpers");
 
 export const patchUser = async (req, res) => {
 
