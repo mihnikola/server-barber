@@ -21,13 +21,16 @@ const userSchema = new mongoose.Schema(
     image: {
       type: String,
     },
+    phoneNumber: {
+      type: String,
+    },
     token: {
       type: String,
     },
     isVerified: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   { timestamps: true }
 );
