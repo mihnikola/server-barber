@@ -1,33 +1,35 @@
-import User from '../models/User.js'; // Assuming User model also uses ES modules
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
-import path from 'path'; // Needed for path.extname in multer
-import { put } from '@vercel/blob';
-import multer from 'multer';
-const { prettyUrlDataImage } = require("../helpers");
+import User from "../models/User.js"; // Assuming User model also uses ES modules
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+import path from "path"; // Needed for path.extname in multer
+import { put } from "@vercel/blob";
+import multer from "multer";
 
-export const patchUser = async (req, res) => {
+// export const patchUser = async (req, res) => {
+//   try {
 
-  try {
-    const { id } = req.params;
-    const { name, image } = req.body.params;
+//     const token = req.params.id;
 
-    const user = await User.findByIdAndUpdate(
-      id,
-      { name, image },
-      { new: true }
-    );
-    if (!user) {
-      return res.status(404).send("User not found");
-    }
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+//     console.log("decoded+++", decoded,req.body);
 
-    res.status(200).json({ message: "User updated successfully" });
-  } catch (error) {
-    res.status(500).send("Server Error");
-  }
-};
+//     const { name, image } = req.body.params;
 
+//     const user = await User.findByIdAndUpdate(
+//       decoded.id,
+//       { name, image },
+//       { new: true }
+//     );
+//     if (!user) {
+//       return res.status(404).send("User not found");
+//     }
+
+//     res.status(200).json({ message: "User updated successfully" });
+//   } catch (error) {
+//     res.status(500).send("Server Error");
+//   }
+// };
 
 // Create a new admin user
 export const createAdminUser = async (req, res) => {
@@ -247,76 +249,161 @@ export const getUser = async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     const user = await User.findOne({ _id: decoded.id });
 
-    console.log("ttttttttt", user);
+    const userData = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      image: user?.image,
+      phoneNumber: user?.phoneNumber,
+    };
 
-    res.status(200).json(user);
+    res.status(200).json({ status: 200, data: userData });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
+// const uploadMiddleware = multer({
+//   storage: multer.memoryStorage(), // Store the file in memory
+//   limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB (5 * 1024 * 1024 bytes)
+//   fileFilter: function (req, file, cb) {
+//     // Define a regular expression to allow only common image file types (JPEG, JPG, PNG, GIF)
+//     const filetypes = /jpeg|jpg|png|gif/;
+//     // Test the file's MIME type against the allowed types
+//     const mimetype = filetypes.test(file.mimetype);
+//     // Test the file's extension (converted to lowercase) against the allowed types
+//     const extname = filetypes.test(
+//       path.extname(file.originalname).toLowerCase()
+//     );
+
+//     if (mimetype && extname) {
+//       return cb(null, true); // If both MIME type and extension are valid, accept the file
+//     } else {
+//       // If the file is not an allowed image type, reject it with an error message
+//       cb(new Error("Only images (JPEG, PNG, GIF) are allowed!"));
+//     }
+//   },
+// });
+// export const uploadUserImage = uploadMiddleware.single("image");
+
+// export const uploadImage = async (req, res) => {
+//   // Check if a file was successfully attached to the request by Multer.
+//   // This could be null if no file was sent, or if the field name was incorrect.
+//   if (!req.file) {
+//     return res.status(400).json({
+//       message: "No file selected for upload or incorrect field name.",
+//     });
+//   }
+
+//   // Retrieve the Vercel Blob Read/Write Token from environment variables.
+//   // This token is essential for authenticating your application with Vercel Blob Storage.
+//   // Make sure to configure BLOB_READ_WRITE_TOKEN in your .env file for local development
+//   // and in your Vercel project settings for deployment.
+//   const vercelBlobToken = process.env.BLOB_READ_WRITE_TOKEN;
+
+//   // If the Vercel Blob token is not configured, send a server configuration error.
+//   if (!vercelBlobToken) {
+//     console.error(
+//       "Vercel Blob token is not set. Please set BLOB_READ_WRITE_TOKEN environment variable."
+//     );
+//     return res.status(500).json({
+//       message: "Server configuration error: Vercel Blob token missing.",
+//     });
+//   }
+
+//   try {
+//     // Call the `put` function from the @vercel/blob SDK to upload the file buffer.
+//     // `req.file.originalname` is used as the desired filename in Vercel Blob storage.
+//     // `req.file.buffer` contains the binary content of the uploaded image.
+//     const blob = await put(req.file.originalname, req.file.buffer, {
+//       access: "public", // Set the access level to 'public' so the image can be viewed via its URL
+//       token: vercelBlobToken, // Pass the authentication token
+//       contentType: req.file.mimetype, // Set the appropriate MIME type for the uploaded file
+//     });
+
+//     console.log("File uploaded to Vercel Blob successfully. URL:", blob.url);
+//     // Send a successful JSON response back to the client, including the Blob's public URL.
+//     res.status(200).json({
+//       message: "File uploaded to Vercel Blob successfully!",
+//       filename: req.file.originalname,
+//       blobUrl: blob.url, // The publicly accessible URL of the uploaded image
+//       pathname: blob.pathname, // The unique path of the blob within your Vercel storage
+//     });
+//   } catch (blobError) {
+//     // Catch and log any errors that occur during the actual upload to Vercel Blob
+//     console.error("Error uploading to Vercel Blob:", blobError);
+//     // Send a 500 status code indicating an internal server error during the upload process
+//     res.status(500).json({
+//       message: `Failed to upload to Vercel Blob: ${blobError.message}`,
+//     });
+//   }
+// };
+
+// 1. Upload middleware (for single file upload)
 const uploadMiddleware = multer({
-  storage: multer.memoryStorage(), // Store the file in memory
-  limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB (5 * 1024 * 1024 bytes)
-  fileFilter: function (req, file, cb) {
-    // Define a regular expression to allow only common image file types (JPEG, JPG, PNG, GIF)
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
     const filetypes = /jpeg|jpg|png|gif/;
-    // Test the file's MIME type against the allowed types
     const mimetype = filetypes.test(file.mimetype);
-    // Test the file's extension (converted to lowercase) against the allowed types
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-
-    if (mimetype && extname) {
-      return cb(null, true); // If both MIME type and extension are valid, accept the file
-    } else {
-      // If the file is not an allowed image type, reject it with an error message
-      cb(new Error('Only images (JPEG, PNG, GIF) are allowed!'));
-    }
-  }
+    const extname = filetypes.test(
+      path.extname(file.originalname).toLowerCase()
+    );
+    if (mimetype && extname) return cb(null, true);
+    cb(new Error("Only images (JPEG, PNG, GIF) are allowed!"));
+  },
 });
-export const uploadUserImage = uploadMiddleware.single('image');
 
-export const uploadImage = async (req, res) => {
-  // Check if a file was successfully attached to the request by Multer.
-  // This could be null if no file was sent, or if the field name was incorrect.
-  if (!req.file) {
-    return res.status(400).json({ message: 'No file selected for upload or incorrect field name.' });
-  }
+// 2. Export multer middleware to use in route
+export const uploadUserImage = uploadMiddleware.single("image");
 
-  // Retrieve the Vercel Blob Read/Write Token from environment variables.
-  // This token is essential for authenticating your application with Vercel Blob Storage.
-  // Make sure to configure BLOB_READ_WRITE_TOKEN in your .env file for local development
-  // and in your Vercel project settings for deployment.
-  const vercelBlobToken = process.env.BLOB_READ_WRITE_TOKEN;
-
-  // If the Vercel Blob token is not configured, send a server configuration error.
-  if (!vercelBlobToken) {
-    console.error('Vercel Blob token is not set. Please set BLOB_READ_WRITE_TOKEN environment variable.');
-    return res.status(500).json({ message: 'Server configuration error: Vercel Blob token missing.' });
-  }
-
+// 3. Unified controller
+export const patchUser = async (req, res) => {
   try {
-    // Call the `put` function from the @vercel/blob SDK to upload the file buffer.
-    // `req.file.originalname` is used as the desired filename in Vercel Blob storage.
-    // `req.file.buffer` contains the binary content of the uploaded image.
-    const blob = await put(req.file.originalname, req.file.buffer, {
-      access: 'public', // Set the access level to 'public' so the image can be viewed via its URL
-      token: vercelBlobToken, // Pass the authentication token
-      contentType: req.file.mimetype, // Set the appropriate MIME type for the uploaded file
-    });
+    // 🔐 1. Decode JWT from URL (e.g., /user/update/:token)
+    const token = req.params.id;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
-    console.log('File uploaded to Vercel Blob successfully. URL:', blob.url);
-    // Send a successful JSON response back to the client, including the Blob's public URL.
-    res.status(200).json({
-      message: 'File uploaded to Vercel Blob successfully!',
-      filename: req.file.originalname,
-      blobUrl: blob.url, // The publicly accessible URL of the uploaded image
-      pathname: blob.pathname, // The unique path of the blob within your Vercel storage
+    const { name, phoneNumber } = req.body;
+
+    let imageUrl = null;
+
+    // 🖼️ 2. If image is included, upload to Vercel Blob
+    if (req.file) {
+      const vercelBlobToken = process.env.BLOB_READ_WRITE_TOKEN;
+      if (!vercelBlobToken) {
+        return res.status(500).json({ message: "Missing Vercel Blob token" });
+      }
+
+      const blob = await put(req.file.originalname, req.file.buffer, {
+        access: "public",
+        token: vercelBlobToken,
+        contentType: req.file.mimetype,
+        allowOverwrite: true, // ✅ This will overwrite the existing file
+      });
+
+      imageUrl = blob.url; // This becomes the new image URL
+    }
+
+    // 🧾 3. Prepare update fields
+    const updateFields = {};
+    if (name) updateFields.name = name;
+    if (phoneNumber) updateFields.phoneNumber = phoneNumber;
+    if (imageUrl) updateFields.image = imageUrl;
+
+    // 🛠️ 4. Update user in MongoDB
+    const user = await User.findByIdAndUpdate(decoded.id, updateFields, {
+      new: true,
     });
-  } catch (blobError) {
-    // Catch and log any errors that occur during the actual upload to Vercel Blob
-    console.error('Error uploading to Vercel Blob:', blobError);
-    // Send a 500 status code indicating an internal server error during the upload process
-    res.status(500).json({ message: `Failed to upload to Vercel Blob: ${blobError.message}` });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // ✅ 5. Return updated user
+    res.status(200).json({
+      message: "User updated successfully",
+      status: 200,
+    });
+  } catch (err) {
+    console.error("Error in patchUserImage:", err);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
