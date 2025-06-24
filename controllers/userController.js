@@ -71,11 +71,11 @@ export const createAdminUser = async (req, res) => {
 
 // Create a new user
 export const createUser = async (req, res) => {
-  const { name, email, password } = req.body;
-  if (!name || !email || !password) {
+ const { name, email, password, phoneNumber } = req.body;
+  if (!name || !email || !password || !phoneNumber) {
     return res
       .status(400)
-      .json({ message: "Name, email, and password are required." });
+      .json({ message: "Name, email, password and phone number are required." });
   }
 
   try {
@@ -92,6 +92,7 @@ export const createUser = async (req, res) => {
       name,
       email,
       password: hashedPassword,
+      phoneNumber,
       isVerified: true,
     });
     await newUser.save();
