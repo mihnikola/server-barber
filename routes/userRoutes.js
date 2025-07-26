@@ -8,6 +8,8 @@ const router = express.Router();
 router.post('/', userController.createUser);
 // router.post('/admin', userController.createAdminUser);
 router.post('/login', userController.loginUser);
+router.get('/email', userController.sendOTP);
+router.get('/otpcode', userController.verifyOtpCode);
 // router.post('/login/admin', userController.loginAdminUser);
 router.get('/', userController.getUsers);
 router.put('/:id', uploadUserImage ,userController.patchUser)
