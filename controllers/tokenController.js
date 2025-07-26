@@ -37,38 +37,34 @@ exports.sendNotification = async (req, res) => {
 };
 // API route to save token
 async function updateTokenFirebase(userId, token) {
-
   const functionUrl =
     "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/updateTokenExpoPushToFirestore";
   await axios
     .post(functionUrl, { userId, token })
     .then((res) => {
-      return res.message;
+      console.log("updateTokenFirebase solve", res.data.message);
     })
     .catch((err) => {
-      console.log("err",err)
-      return err;
+      console.log("err", err);
     });
 }
 
 exports.saveToken = async (req, res) => {
   const { tokenExpo, tokenUser } = req.body;
+
   try {
     const userData = await Token.findOne({ user: tokenUser });
     if (userData) {
-
-      const tokenUpdate = await Token.findOneAndUpdate(
+      await Token.findOneAndUpdate(
         { user: tokenUser },
         { $set: { token: tokenExpo } },
         { new: true }
       );
-
-         const messageFirebase = await updateTokenFirebase(tokenUser, tokenExpo);
+      updateTokenFirebase(tokenUser, tokenExpo);
 
       return res
         .status(200)
         .send({ status: 200, message: "Token updated successfully" });
-     
     } else {
       const newToken = new Token({ token: tokenExpo, user: tokenUser });
       await newToken.save();
