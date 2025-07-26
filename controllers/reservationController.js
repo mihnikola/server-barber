@@ -4,7 +4,7 @@ const Token = require("../models/Token");
 const jwt = require("jsonwebtoken");
 const admin = require("firebase-admin");
 const axios = require("axios");
-const { updateTimeToTenUTC, convertToISO8601 } = require("../helpers");
+const { updateTimeToTenUTC } = require("../helpers");
 
 require("dotenv").config();
 
@@ -176,7 +176,7 @@ exports.getReservationById = async (req, res) => {
 
   try {
     const reservationItem = await Reservation.findOne({ _id: id })
-      .populate({
+      .populate({ 
         path: "service",
         select: "id name duration price image",
         transform: (doc) => {
@@ -187,21 +187,13 @@ exports.getReservationById = async (req, res) => {
             );
           }
           return doc;
-        },
+        },  
       })
       .populate({
-        path: "employer",
+        path: "user",
         select: "id name image",
-         transform: (doc) => {
-          if (doc.image) {
-            // Assuming the image field stores the relative path
-            doc.image = prettyUrlDataImage(
-              `${process.env.API_URL}/${doc.image}`
-            );
-          }
-          return doc;
-        },  
-      }); // Populate employee data;
+      
+      }); 
     res.status(200).json(reservationItem);
   } catch (error) {
     res.status(500).json({ error: err.message });
