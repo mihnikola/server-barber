@@ -6,6 +6,9 @@ import path from "path"; // Needed for path.extname in multer
 import { put } from "@vercel/blob";
 import multer from "multer";
 import { prettyUrlDataImage } from "../helpers/utils.js";
+import { sendEmail } from "../helpers/mail.js";
+import otpGenerator from "otp-generator";
+import VerificationOtpCode from "../models/OtpModel.js"; // Assuming User model also uses ES modules
 
 // export const patchUser = async (req, res) => {
 //   try {
@@ -71,15 +74,17 @@ export const createAdminUser = async (req, res) => {
 
 // Create a new user
 export const createUser = async (req, res) => {
- const { name, email, password, phoneNumber } = req.body;
+
+  const { name, email, password, phoneNumber } = req.body;
   if (!name || !email || !password || !phoneNumber) {
-    return res
-      .status(400)
-      .json({ message: "Name, email, password and phone number are required." });
+    return res.status(400).json({
+      message: "Name, email, password and phone number are required.",
+    });
   }
 
   try {
     // Check if user with email already exists
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(202).json({ message: "Email already exists." });
@@ -96,6 +101,14 @@ export const createUser = async (req, res) => {
       isVerified: true,
     });
     await newUser.save();
+
+    const subject = "Registration";
+
+    const message = "Please enter your otp code 3212";
+
+    const receipients = `${name} <${email}>`;
+
+    sendEmail({ receipients, subject, message });
 
     res.status(201).json({
       message: "User created successfully!",
@@ -407,5 +420,86 @@ export const patchUser = async (req, res) => {
   } catch (err) {
     console.error("Error in patchUserImage:", err);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const sendOTP = async (req, res) => {
+  try {
+    const email = req.query["params[email]"];
+    const expirationTime = new Date();
+    expirationTime.setSeconds(expirationTime.getSeconds() + 40); // Add 10 seconds
+    const checkUserPresent = await User.findOne({ email });
+
+    if (!checkUserPresent) {
+      return res.status(400).json({
+        success: false,
+        message: "Wrong email",
+        status: 400,
+      });
+    }
+    let otp = otpGenerator.generate(6, {
+      upperCaseAlphabets: false,
+      lowerCaseAlphabets: false,
+      specialChars: false,
+    });
+    let result = await VerificationOtpCode.findOne({ otp: otp });
+
+    while (result) {
+      otp = otpGenerator.generate(6, {
+        upperCaseAlphabets: false,
+      });
+      result = await VerificationOtpCode.findOne({ otp: otp });
+    }
+
+    const otpPayload = { email, otp, expireAt: expirationTime };
+    await VerificationOtpCode.create(otpPayload);
+
+    const subject = "Forgot password";
+
+    const message = `Your otp code is ${otp}`;
+
+    const receipients = email;
+
+    sendEmail({ receipients, subject, message });
+
+    res.status(200).json({
+      success: true,
+      message: `OTP code sent successfully on email ${email}`,
+      otp,
+      status: 200,
+    });
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+export const verifyOtpCode = async (req, res) => {
+  try {
+    const email = req.query["params[email]"];
+    const otpCode = req.query["params[otpCode]"];
+
+    
+    let result = await VerificationOtpCode.findOne({ otp: otpCode, email });
+
+    
+    if (result) {
+      res.status(200).json({
+        success: true,
+        message: `Your otp code is valid`,
+        otp,
+        status: 200,
+      });
+    }else{
+       res.status(300).json({
+        success: true,
+        message: `Your otp code is invalid`,
+        otp,
+        status: 300,
+      });
+    }
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ success: false, error: error.message });
   }
 };
