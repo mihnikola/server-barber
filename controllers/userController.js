@@ -107,8 +107,8 @@ export const createUser = async (req, res) => {
     const message = "Please enter your otp code 3212";
 
     const receipients = `${name} <${email}>`;
-
     sendEmail({ receipients, subject, message });
+
 
     res.status(201).json({
       message: "User created successfully!",
@@ -461,6 +461,7 @@ export const sendOTP = async (req, res) => {
     const receipients = email;
 
     sendEmail({ receipients, subject, message });
+
 
     res.status(200).json({
       success: true,
