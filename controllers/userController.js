@@ -427,7 +427,7 @@ async function sendEmail(receipients) {
     "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/sendMail";
     console.log("receipients",receipients)
   await axios
-    .post(functionUrl, { to: receipients.receipients, subject: receipients.subject, message: receipients.message })
+    .post(functionUrl, { to: receipients.receipients, subject: receipients.subject, text: receipients.message,html: receipients.message })
     .then((res) => {
       console.log("solve", res.data.message);
     })
@@ -472,7 +472,7 @@ export const sendOTP = async (req, res) => {
 
     const receipients = email;
 
-    sendEmail({ receipients, subject, message });
+    await sendEmail({ receipients, subject, message });
 
 
     res.status(200).json({
