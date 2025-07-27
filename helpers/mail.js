@@ -1,23 +1,30 @@
-const nodemailer = require("nodemailer");
+const sendEmail = async (receipients) => {
+  const functionUrl = "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/sendMail"; 
 
-let transport = nodemailer.createTransport({
-    host: "smtp.gmail.com", // ILI npr. 'smtp.gmail.com'
-    port: 587,
-    secure: true, // true za port 465 (SSL), false za 587 (TLS/STARTTLS)
-    auth: {
-        user: "fusiontechagent@gmail.com",
-        pass: "eksl jnfc ujxx nuss"
+  try {
+    const response = await fetch(functionUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        to: receipients.receipients,
+        subject: receipients.subject,
+        html: receipients.message,
+        text: receipients.message,
+      }),
+    });
+
+    if (response.ok) {
+      console.log("Email je uspešno poslat!");
+    } else {
+      const errorText = await response.text();
+      console.error("Greška pri slanju emaila:", errorText);
     }
-});
-
-const sendEmail = async ({ receipients, subject, message }) => {
-  return await transport.sendMail({
-    from: "fusiontechagent@gmail.com",
-    to: receipients,
-    subject,
-    text: message,
-    html: message,
-  });
+  } catch (error) {
+    console.error("Došlo je do greške u mreži:", error);
+  }
 };
+
 
 module.exports = { sendEmail };
