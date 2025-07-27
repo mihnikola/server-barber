@@ -6,9 +6,26 @@ import path from "path"; // Needed for path.extname in multer
 import { put } from "@vercel/blob";
 import multer from "multer";
 import { prettyUrlDataImage } from "../helpers/utils.js";
-import { sendEmail } from "../helpers/mail.js";
 import otpGenerator from "otp-generator";
 import VerificationOtpCode from "../models/OtpModel.js"; // Assuming User model also uses ES modules
+import axios from "axios";
+
+
+
+async function sendEmail(receipients) {
+ const functionUrl =
+    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/sendMail";
+  await axios
+    .post(functionUrl, { receipients })
+    .then((res) => {
+      console.log("solve", res.data.message);
+    })
+    .catch((err) => {
+      console.log("err", err);
+    });
+}
+
+
 
 // export const patchUser = async (req, res) => {
 //   try {
