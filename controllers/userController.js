@@ -10,23 +10,6 @@ import otpGenerator from "otp-generator";
 import VerificationOtpCode from "../models/OtpModel.js"; // Assuming User model also uses ES modules
 import axios from "axios";
 
-
-
-async function sendEmail(receipients) {
- const functionUrl =
-    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/sendMail";
-  await axios
-    .post(functionUrl, { receipients })
-    .then((res) => {
-      console.log("solve", res.data.message);
-    })
-    .catch((err) => {
-      console.log("err", err);
-    });
-}
-
-
-
 // export const patchUser = async (req, res) => {
 //   try {
 
@@ -439,7 +422,19 @@ export const patchUser = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
+async function sendEmail(receipients) {
+ const functionUrl =
+    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/sendMail";
+    console.log("receipients",receipients)
+  await axios
+    .post(functionUrl, { to: receipients.receipients, subject: receipients.subject, message: receipients.message })
+    .then((res) => {
+      console.log("solve", res.data.message);
+    })
+    .catch((err) => {
+      console.log("err", err);
+    });
+}
 export const sendOTP = async (req, res) => {
   try {
     const email = req.query["params[email]"];
