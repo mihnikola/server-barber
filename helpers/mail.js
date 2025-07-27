@@ -3,7 +3,7 @@ const { default: axios } = require("axios");
 const sendEmail = async (receipients) => {
   const functionUrl =
     "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/sendMail";
-
+console.log("object",receipients)
   await axios
     .post(functionUrl, {
       to: receipients.receipients,
@@ -16,8 +16,8 @@ const sendEmail = async (receipients) => {
       console.log("Email je uspešno poslat!");
     })
     .catch((err) => {
-      console.log("err", err);
-      console.error("Greška pri slanju emaila:", errorText);
+      console.error("Greška pri slanju emaila:", err);
+      alert("Greška pri slanju emaila: " + err);
     });
 };
 
