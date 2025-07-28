@@ -192,7 +192,15 @@ exports.getReservationById = async (req, res) => {
       .populate({
         path: "employer",
         select: "id name image",
-      
+      transform: (doc) => {
+          if (doc.image) {
+            // Assuming the image field stores the relative path
+            doc.image = prettyUrlDataImage(
+              `${process.env.API_URL}/${doc.image}`
+            );
+          }
+          return doc;
+        },
       }); 
     res.status(200).json(reservationItem);
   } catch (error) {
