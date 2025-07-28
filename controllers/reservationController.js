@@ -190,7 +190,7 @@ exports.getReservationById = async (req, res) => {
         },  
       })
       .populate({
-        path: "user",
+        path: "employer",
         select: "id name image",
       
       }); 
