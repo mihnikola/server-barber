@@ -74,7 +74,6 @@ export const createAdminUser = async (req, res) => {
 
 // Create a new user
 export const createUser = async (req, res) => {
-
   const { name, email, password, phoneNumber } = req.body;
   if (!name || !email || !password || !phoneNumber) {
     return res.status(400).json({
@@ -101,11 +100,6 @@ export const createUser = async (req, res) => {
       isVerified: false,
     });
     await newUser.save();
-
-
-
-
-
 
     const expirationTime = new Date();
     expirationTime.setSeconds(expirationTime.getSeconds() + 40); // Add 10 seconds
@@ -143,25 +137,12 @@ export const createUser = async (req, res) => {
 
     await sendEmail({ receipients, subject, message });
 
-
-
-
-
-
-
-
-
-
-
-
-
     // const subject = "Registration";
 
     // const message = "Please enter your otp code 3212";
 
     // const receipients = `${name} <${email}>`;
     // await sendEmail({ receipients, subject, message });
-
 
     res.status(201).json({
       message: "User created successfully! Please verified your account.",
@@ -173,39 +154,38 @@ export const createUser = async (req, res) => {
   }
 };
 
-// exports.verifyEmail = async (req, res) => {
+export const verifyEmail = async (req, res) => {
+  const email = req.query["params[email]"];
+  const otpCode = req.query["params[otpCode]"];
+  try {
+    // Verify the token using the secret key
 
-//   const { token } = req.query; // The token is sent as part of the URL
-//   try {
-//     // Verify the token using the secret key
-//     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    // Find the user with the decoded email
+    const user = await User.findOne({ email });
+    let result = await VerificationOtpCode.findOne({ otp: otpCode, email });
 
-//     // Find the user with the decoded email
-//     const user = await User.findOne({ email: decoded.email });
+    if (!result) {
+      return res
+        .status(400)
+        .json({ error: "Invalid or expired verification otp code." });
+    }
 
-//     if (!user) {
-//       return res
-//         .status(400)
-//         .json({ error: "Invalid or expired verification token." });
-//     }
+    // Check if the user is already verified
+    if (user.isVerified) {
+      return res.status(400).json({ error: "User already verified." });
+    }
 
-//     // Check if the user is already verified
-//     if (user.isVerified) {
-//       return res.status(400).json({ error: "User already verified." });
-//     }
-
-//     // Mark the user as verified
-//     user.isVerified = true;
-//     user.token = null; // Clear the token once used
-//     await user.save();
-//     res
-//       .status(200)
-//       .json({ message: "Your email has been verified! You can now log in." });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ error: "Failed to verify the token." });
-//   }
-// };
+    // Mark the user as verified
+    user.isVerified = true;
+    await user.save();
+    res
+      .status(200)
+      .json({ message: "Your account has been verified! You can now log in." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to verify the token." });
+  }
+};
 
 //loginAdminUser
 export const loginAdminUser = async (req, res) => {
@@ -476,11 +456,16 @@ export const patchUser = async (req, res) => {
   }
 };
 async function sendEmail(receipients) {
- const functionUrl =
+  const functionUrl =
     "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/sendMail";
-    console.log("receipients",receipients)
+  console.log("receipients", receipients);
   await axios
-    .post(functionUrl, { to: receipients.receipients, subject: receipients.subject, text: receipients.message,html: receipients.message })
+    .post(functionUrl, {
+      to: receipients.receipients,
+      subject: receipients.subject,
+      text: receipients.message,
+      html: receipients.message,
+    })
     .then((res) => {
       console.log("solve", res.data.message);
     })
@@ -527,7 +512,6 @@ export const sendOTP = async (req, res) => {
 
     await sendEmail({ receipients, subject, message });
 
-
     res.status(200).json({
       success: true,
       message: `OTP code sent successfully on email ${email}`,
@@ -545,10 +529,8 @@ export const verifyOtpCode = async (req, res) => {
     const email = req.query["params[email]"];
     const otpCode = req.query["params[otpCode]"];
 
-    
     let result = await VerificationOtpCode.findOne({ otp: otpCode, email });
 
-    
     if (result) {
       res.status(200).json({
         success: true,
@@ -556,8 +538,8 @@ export const verifyOtpCode = async (req, res) => {
         otp,
         status: 200,
       });
-    }else{
-       res.status(300).json({
+    } else {
+      res.status(300).json({
         success: true,
         message: `Your otp code is invalid`,
         otp,
