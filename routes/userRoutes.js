@@ -6,13 +6,12 @@ const router = express.Router();
 
 // Create a new service
 router.post('/', userController.createUser);
-// router.post('/admin', userController.createAdminUser);
 router.post('/login', userController.loginUser);
 router.get('/email', userController.sendOTP);
 router.get('/otpcode', userController.verifyOtpCode);
-// router.post('/login/admin', userController.loginAdminUser);
+router.get('/verifyEmail', userController.verifyEmail);
 router.get('/', userController.getUsers);
 router.put('/:id', uploadUserImage ,userController.patchUser)
 router.get('/:id', userController.getUser);
-// router.put('/:id', userController.patchUser);
+router.put('/:id/changePassword', userController.patchUser);
 module.exports = router;
