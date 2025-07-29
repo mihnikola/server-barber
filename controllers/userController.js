@@ -98,20 +98,73 @@ export const createUser = async (req, res) => {
       email,
       password: hashedPassword,
       phoneNumber,
-      isVerified: true,
+      isVerified: false,
     });
     await newUser.save();
 
+
+
+
+
+
+    const expirationTime = new Date();
+    expirationTime.setSeconds(expirationTime.getSeconds() + 40); // Add 10 seconds
+    // const checkUserPresent = await User.findOne({ email });
+
+    // if (!checkUserPresent) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Wrong email",
+    //     status: 400,
+    //   });
+    // }
+    let otp = otpGenerator.generate(6, {
+      upperCaseAlphabets: false,
+      lowerCaseAlphabets: false,
+      specialChars: false,
+    });
+    let result = await VerificationOtpCode.findOne({ otp: otp });
+
+    while (result) {
+      otp = otpGenerator.generate(6, {
+        upperCaseAlphabets: false,
+      });
+      result = await VerificationOtpCode.findOne({ otp: otp });
+    }
+
+    const otpPayload = { email, otp, expireAt: expirationTime };
+    await VerificationOtpCode.create(otpPayload);
+
     const subject = "Registration";
 
-    const message = "Please enter your otp code 3212";
+    const message = `Your otp code is ${otp}`;
 
-    const receipients = `${name} <${email}>`;
-    sendEmail({ receipients, subject, message });
+    const receipients = email;
+
+    await sendEmail({ receipients, subject, message });
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // const subject = "Registration";
+
+    // const message = "Please enter your otp code 3212";
+
+    // const receipients = `${name} <${email}>`;
+    // await sendEmail({ receipients, subject, message });
 
 
     res.status(201).json({
-      message: "User created successfully!",
+      message: "User created successfully! Please verified your account.",
     });
   } catch (err) {
     res
