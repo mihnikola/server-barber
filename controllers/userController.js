@@ -23,12 +23,12 @@ export const patchUser = async (req, res) => {
     const { name, phoneNumber } = req.body;
     const updateData = {};
 
-    console.log("object",name, phoneNumber)
-    if (name !== 'null') {
+    console.log("object", name, phoneNumber);
+    if (name !== "null") {
       console.log("name", name);
       updateData.name = name;
     }
-    if (phoneNumber !== 'null' && phoneNumber !== null) {
+    if (phoneNumber !== "null" && phoneNumber !== null) {
       console.log("phoneNumber", phoneNumber);
       updateData.phoneNumber = phoneNumber;
     }
@@ -72,7 +72,58 @@ export const patchUser = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+export const loginVerify = async (req, res) => {
 
+  const { email, password, otpCode } = req.body;
+
+  let result = await VerificationOtpCode.findOne({ otp: otpCode, email });
+
+  if (!result) {
+    return res
+      .status(202)
+      .json({ status: 202, message: "Your otp code is not valid" });
+  }
+  // Find the user in the "database"
+  const user = await User.findOne({ email }); // `findOne` is typically better if you expect a single result
+
+  if (!user) {
+    return res
+      .status(202)
+      .json({ status: 202, message: "Incorrect email or password" });
+  }
+
+  // Compare the password with the hashed password stored in the database
+  const isPasswordMatch = await bcrypt.compare(password, user.password);
+
+  if (!isPasswordMatch) {
+    return res.status(202).json({ status: 202, message: "Incorrect password" });
+  }
+
+  user.isVerified = true;
+  await user.save();
+  // const updateFields = {};
+  // updateFields.isVerified = true;
+
+  // await User.findByIdAndUpdate(user._id, updateFields, {
+  //   new: true,
+  // });
+
+  const userData = {
+    id: user._id.toHexString(),
+    email: user.email,
+  };
+
+  // Create JWT token
+  const token = jwt.sign(userData, process.env.JWT_SECRET_KEY, {
+    expiresIn: "10000000m",
+  });
+  res.status(200).json({
+    status: 69,
+    token,
+    userId: user._id,
+    message: "Your account has been verified! Welcome to hell!",
+  });
+};
 // Create a new admin user
 export const createAdminUser = async (req, res) => {
   const { name, email, password } = req.body;
@@ -163,6 +214,8 @@ export const createUser = async (req, res) => {
     const message = `Your otp code is ${otp}`;
 
     const receipients = email;
+
+    console.log("Registration+++", otp);
 
     await sendEmail({ receipients, subject, message });
 
@@ -277,7 +330,7 @@ export const loginUser = async (req, res) => {
     }
 
     if (!user.isVerified) {
-      return res.status(202).json({ status: 202, message: "Not verified" });
+      return res.status(202).json({ status: 606, message: "Not verified" });
     }
     const userData = {
       id: user._id.toHexString(),
@@ -385,6 +438,7 @@ async function sendEmail(receipients) {
     });
 }
 export const sendOTP = async (req, res) => {
+  console.log("gde si oziii");
   try {
     const email = req.query["params[email]"];
     const expirationTime = new Date();
@@ -420,6 +474,62 @@ export const sendOTP = async (req, res) => {
     const message = `Your otp code is ${otp}`;
 
     const receipients = email;
+
+    console.log("object", otp);
+
+    await sendEmail({ receipients, subject, message });
+
+    res.status(200).json({
+      success: true,
+      message: `OTP code sent successfully on email ${email}`,
+      otp,
+      status: 200,
+    });
+  } catch (error) {
+    console.log(error.message);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+export const sendOTPviaLogin = async (req, res) => {
+  try {
+    const email = req.query["params[email]"];
+
+    const expirationTime = new Date();
+    expirationTime.setSeconds(expirationTime.getSeconds() + 20); // Add 10 seconds
+    const checkUserPresent = await User.findOne({ email });
+
+    if (!checkUserPresent) {
+      return res.status(400).json({
+        success: false,
+        message: "Wrong email",
+        status: 400,
+      });
+    }
+    let otp = otpGenerator.generate(6, {
+      upperCaseAlphabets: false,
+      lowerCaseAlphabets: false,
+      specialChars: false,
+    });
+    let result = await VerificationOtpCode.findOne({ otp: otp });
+
+    while (result) {
+      otp = otpGenerator.generate(6, {
+        upperCaseAlphabets: false,
+      });
+      result = await VerificationOtpCode.findOne({ otp: otp });
+    }
+
+    const otpPayload = { email, otp, expireAt: expirationTime };
+    await VerificationOtpCode.create(otpPayload);
+
+    const subject = "Registration";
+
+    const message = `Your otp code is ${otp}`;
+
+    const receipients = email;
+
+    console.log("object", otp);
 
     await sendEmail({ receipients, subject, message });
 

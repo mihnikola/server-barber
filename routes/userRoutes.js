@@ -9,8 +9,10 @@ const router = express.Router();
 router.post('/', userController.createUser);
 router.post('/login', userController.loginUser);
 router.get('/email', userController.sendOTP);
+router.get('/sendOTPviaLogin', userController.sendOTPviaLogin);
 router.get('/otpcode', userController.verifyOtpCode);
 router.get('/verifyEmail', userController.verifyEmail);
+router.post('/loginVerify', userController.loginVerify);
 router.get('/', userController.getUsers);
 // router.put('/:id', uploadUserImage ,userController.patchUser)
 router.put('/:id', uploadUserImage.single('image'), userController.patchUser);
