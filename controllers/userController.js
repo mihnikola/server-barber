@@ -1,7 +1,9 @@
 import User from "../models/User.js"; // Assuming User model also uses ES modules
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
+import fs from "fs";
+import fetch from "node-fetch";
+
 import path from "path"; // Needed for path.extname in multer
 import { put } from "@vercel/blob";
 import multer from "multer";
@@ -9,6 +11,67 @@ import { prettyUrlDataImage } from "../helpers/utils.js";
 import otpGenerator from "otp-generator";
 import VerificationOtpCode from "../models/OtpModel.js"; // Assuming User model also uses ES modules
 import axios from "axios";
+
+// 3. Unified controller
+
+export const patchUser = async (req, res) => {
+  try {
+    const userDataId = req.params.id;
+    const decoded = jwt.verify(userDataId, process.env.JWT_SECRET_KEY);
+    const { id: userId } = decoded;
+
+    const { name, phoneNumber } = req.body;
+    const updateData = {};
+
+    console.log("object",name, phoneNumber)
+    if (name !== 'null') {
+      console.log("name", name);
+      updateData.name = name;
+    }
+    if (phoneNumber !== 'null' && phoneNumber !== null) {
+      console.log("phoneNumber", phoneNumber);
+      updateData.phoneNumber = phoneNumber;
+    }
+
+    if (req.file && req.file.buffer) {
+      console.log("kdaskdaskdasd i ti a");
+
+      const fileName = `${Date.now()}-${req.file.originalname}`;
+
+      // ✅ Upload to Vercel Blob using SDK
+      const blob = await put(fileName, req.file.buffer, {
+        access: "public", // 👈 MAKE IT PUBLIC
+        token: process.env.BLOB_READ_WRITE_TOKEN,
+      });
+
+      updateData.image = blob.url; // ✅ This is a public URL
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      console.log("nece da moze");
+
+      return res.status(400).json({ message: "No fields to update" });
+    }
+
+    console.log("updateData", updateData);
+
+    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+      new: true,
+    });
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      message: "User updated successfully",
+      user: updatedUser,
+    });
+  } catch (err) {
+    console.error("Error in patchUser:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
 // Create a new admin user
 export const createAdminUser = async (req, res) => {
@@ -103,8 +166,6 @@ export const createUser = async (req, res) => {
 
     await sendEmail({ receipients, subject, message });
 
-   
-
     res.status(201).json({
       message: "User created successfully! Please verified your account.",
     });
@@ -138,12 +199,10 @@ export const verifyEmail = async (req, res) => {
     // Mark the user as verified
     user.isVerified = true;
     await user.save();
-    res
-      .status(200)
-      .json({
-        status: 200,
-        message: "Your account has been verified! You can now log in.",
-      });
+    res.status(200).json({
+      status: 200,
+      message: "Your account has been verified! You can now log in.",
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to verify the token." });
@@ -274,28 +333,8 @@ export const getUser = async (req, res) => {
   }
 };
 
-
-
-// 1. Upload middleware (for single file upload)
-const uploadMiddleware = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const filetypes = /jpeg|jpg|png|gif/;
-    const mimetype = filetypes.test(file.mimetype);
-    const extname = filetypes.test(
-      path.extname(file.originalname).toLowerCase()
-    );
-    if (mimetype && extname) return cb(null, true);
-    cb(new Error("Only images (JPEG, PNG, GIF) are allowed!"));
-  },
-});
-
-// 2. Export multer middleware to use in route
-export const uploadUserImage = uploadMiddleware.single("image");
-
 // 3. Unified controller
-export const patchUser = async (req, res) => {
+export const changeUserPassword = async (req, res) => {
   try {
     // 🔐 1. Decode JWT from URL (e.g., /user/update/:token)
     const email = req.params.id;
@@ -308,18 +347,14 @@ export const patchUser = async (req, res) => {
 
     // 🧾 3. Prepare update fields
     const updateFields = {};
-     const salt = await bcrypt.genSalt(10);
+    const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     if (password) updateFields.password = hashedPassword;
     // 🛠️ 4. Update user in MongoDB
 
-
     const x = await User.findByIdAndUpdate(user._id, updateFields, {
       new: true,
     });
-
-
-    
 
     // ✅ 5. Return updated user
     res.status(200).json({

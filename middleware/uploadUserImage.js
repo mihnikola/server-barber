@@ -1,18 +1,20 @@
-// middleware.js
-import multer from "multer";
-import path from "path";
+const multer = require('multer');
 
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const filetypes = /jpeg|jpg|png|gif/;
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = filetypes.test(file.mimetype);
-    if (mimetype && extname) return cb(null, true);
-    cb(new Error("Only image files are allowed"));
-  },
+// Accept only image files: jpeg, jpg, png
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only .jpeg, .jpg, and .png image formats are allowed'));
+  }
+};
+
+// Multer config using memory storage (no disk writes)
+const uploadUserImage = multer({
+  storage: multer.memoryStorage(), // ✅ keep file in memory
+  limits: { fileSize: 5 * 1024 * 1024 }, // ✅ 5MB max file size
+  fileFilter, // ✅ validate file type
 });
 
-// This middleware will parse both `req.body` and `req.file`
-export const uploadUserImage = upload.single("image");
+module.exports = uploadUserImage;

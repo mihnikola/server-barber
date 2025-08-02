@@ -1,6 +1,7 @@
 const express = require('express');
 const userController = require('../controllers/userController');
-const { uploadUserImage } = require('../middleware/uploadUserImage');
+// const { uploadUserImage } = require('../middleware/uploadUserImage');
+const uploadUserImage = require('../middleware/uploadUserImage');
 
 const router = express.Router();
 
@@ -11,7 +12,9 @@ router.get('/email', userController.sendOTP);
 router.get('/otpcode', userController.verifyOtpCode);
 router.get('/verifyEmail', userController.verifyEmail);
 router.get('/', userController.getUsers);
-router.put('/:id', uploadUserImage ,userController.patchUser)
+// router.put('/:id', uploadUserImage ,userController.patchUser)
+router.put('/:id', uploadUserImage.single('image'), userController.patchUser);
+
 router.get('/:id', userController.getUser);
-router.put('/:id/changePassword', userController.patchUser);
+router.put('/:id/changePassword', userController.changeUserPassword);
 module.exports = router;
