@@ -330,7 +330,7 @@ export const loginUser = async (req, res) => {
     }
 
     if (!user.isVerified) {
-      return res.status(202).json({ status: 606, message: "Not verified" });
+      return res.status(202).json({ status: 606, message: "Your account is not verified yet, you will be redirected to otp verification now." });
     }
     const userData = {
       id: user._id.toHexString(),
