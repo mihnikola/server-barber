@@ -66,11 +66,14 @@ exports.createReservation = async (req, res) => {
 
     await newReservation.save();
 
+    const reservationIdValue = newReservation._id; 
+
     const taskData = {
       userId: decoded.id,
       status: "scheduled",
       performAt: timeStampValue,
       token: tokenExpo.token,
+      reservationId: reservationIdValue
     };
 
     sendTaskToBackend(taskData);
