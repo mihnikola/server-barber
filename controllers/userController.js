@@ -73,7 +73,6 @@ export const patchUser = async (req, res) => {
   }
 };
 export const loginVerify = async (req, res) => {
-
   const { email, password, otpCode } = req.body;
 
   let result = await VerificationOtpCode.findOne({ otp: otpCode, email });
@@ -123,6 +122,19 @@ export const loginVerify = async (req, res) => {
     userId: user._id,
     message: "Your account has been verified! Welcome to hell!",
   });
+};
+export const logout = async (req, res) => {
+  const { token } = req.body;
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    await logoutUserFromFirebase(decoded.id);
+
+    res.status(200).json({ status: 200, message: "User successfully logout!" });
+  } catch (error) {
+    res
+      .status(500)
+      .send({ status: 500, message: "Something Went Wrong, Please Try Again" });
+  }
 };
 // Create a new admin user
 export const createAdminUser = async (req, res) => {
@@ -330,7 +342,11 @@ export const loginUser = async (req, res) => {
     }
 
     if (!user.isVerified) {
-      return res.status(202).json({ status: 606, message: "Your account is not verified yet, you will be redirected to otp verification now." });
+      return res.status(202).json({
+        status: 606,
+        message:
+          "Your account is not verified yet, you will be redirected to otp verification now.",
+      });
     }
     const userData = {
       id: user._id.toHexString(),
@@ -435,6 +451,18 @@ async function sendEmail(receipients) {
     })
     .catch((err) => {
       console.log("err", err);
+    });
+}
+async function logoutUserFromFirebase(userId) {
+  const functionUrl =
+    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/logoutUserFromFirebase";
+  await axios
+    .post(functionUrl, { userId })
+    .then((res) => {
+      console.log("logoutUserFromFirebase solve", res.data.message);
+    })
+    .catch((err) => {
+      console.log("logoutUserFromFirebase err", err);
     });
 }
 export const sendOTP = async (req, res) => {

@@ -13,6 +13,7 @@ router.get('/sendOTPviaLogin', userController.sendOTPviaLogin);
 router.get('/otpcode', userController.verifyOtpCode);
 router.get('/verifyEmail', userController.verifyEmail);
 router.post('/loginVerify', userController.loginVerify);
+router.post('/logout',userController.logout);
 router.get('/', userController.getUsers);
 // router.put('/:id', uploadUserImage ,userController.patchUser)
 router.put('/:id', uploadUserImage.single('image'), userController.patchUser);
