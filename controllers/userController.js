@@ -120,7 +120,7 @@ export const loginVerify = async (req, res) => {
     status: 69,
     token,
     userId: user._id,
-    message: "Your account has been verified! Welcome to hell!",
+    message: "Your account has been verified!",
   });
 };
 export const logout = async (req, res) => {
@@ -345,7 +345,7 @@ export const loginUser = async (req, res) => {
       return res.status(202).json({
         status: 606,
         message:
-          "Your account is not verified yet, you will be redirected to otp verification now.",
+          "Your account is not verified yet, send your otp code to your email.",
       });
     }
     const userData = {
