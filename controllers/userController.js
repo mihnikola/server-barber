@@ -345,7 +345,7 @@ export const loginUser = async (req, res) => {
       return res.status(202).json({
         status: 606,
         message:
-          "Your account is not verified yet, you will be redirected to otp verification now.",
+          "Your account is not verified yet, otp code will be send to your email.",
       });
     }
     const userData = {
@@ -439,7 +439,7 @@ async function sendEmail(receipients) {
   const functionUrl =
     "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/sendMail";
   console.log("receipients", receipients);
-  await axios
+  const responseEmail = await axios
     .post(functionUrl, {
       to: receipients.receipients,
       subject: receipients.subject,
@@ -447,11 +447,14 @@ async function sendEmail(receipients) {
       html: receipients.message,
     })
     .then((res) => {
-      console.log("solve", res);
+      if (res.data) {
+        return res.data;
+      }
     })
     .catch((err) => {
-      console.log("err", err);
+      return err;
     });
+    return responseEmail;
 }
 async function logoutUserFromFirebase(userId) {
   const functionUrl =
@@ -503,16 +506,25 @@ export const sendOTP = async (req, res) => {
 
     const receipients = email;
 
-    console.log("object", otp);
+    await sendEmail({ receipients, subject, message })
+      .then((result) => {
+        console.log("send Email success+++", result);
+        if (result) {
+          res.status(200).json({
+            success: true,
+            status: 200,
+          });
+        }
+      })
+      .catch((err) => {
+        console.log("send Email err", err);
 
-    await sendEmail({ receipients, subject, message });
-
-    res.status(200).json({
-      success: true,
-      message: `OTP code sent successfully on email ${email}`,
-      otp,
-      status: 200,
-    });
+        res.status(500).json({
+          success: false,
+          message: err,
+          status: 500,
+        });
+      });
   } catch (error) {
     console.log(error.message);
     return res.status(500).json({ success: false, error: error.message });
@@ -557,16 +569,22 @@ export const sendOTPviaLogin = async (req, res) => {
 
     const receipients = email;
 
-    console.log("object", otp);
-
-    await sendEmail({ receipients, subject, message });
-
-    res.status(200).json({
-      success: true,
-      message: `OTP code sent successfully on email ${email}`,
-      otp,
-      status: 200,
-    });
+    await sendEmail({ receipients, subject, message })
+      .then((result) => {
+        if (result) {
+          res.status(200).json({
+            success: true,
+            status: 200,
+          });
+        }
+      })
+      .catch((err) => {
+        res.status(500).json({
+          success: false,
+          message: err,
+          status: 500,
+        });
+      });
   } catch (error) {
     console.log(error.message);
     return res.status(500).json({ success: false, error: error.message });
