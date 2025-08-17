@@ -227,9 +227,36 @@ export const createUser = async (req, res) => {
 
     const receipients = email;
 
-    console.log("Registration+++", otp);
-
-    await sendEmail({ receipients, subject, message });
+   await sendEmail({ receipients, subject, message })
+      .then((result) => {
+        if (result.status === 200) {
+          return res.status(200).json({
+            success: true,
+            status: 200,
+          });
+        }
+        if (result.status === 500) {
+          return res.status(500).json({
+            success: false,
+            message: result.text,
+            status: 500,
+          });
+        }
+        if (result.status === 404) {
+          return res.status(500).json({
+            success: false,
+            message: result.text,
+            status: 500,
+          });
+        }
+      })
+      .catch((err) => {
+        return res.status(500).json({
+          success: false,
+          message: err,
+          status: 500,
+        });
+      });
 
     res.status(201).json({
       message: "User created successfully! Please verified your account.",
@@ -438,7 +465,6 @@ export const changeUserPassword = async (req, res) => {
 async function sendEmail(receipients) {
   const functionUrl =
     "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/sendMail";
-  console.log("receipients", receipients);
   const responseEmail = await axios
     .post(functionUrl, {
       to: receipients.receipients,
@@ -447,14 +473,15 @@ async function sendEmail(receipients) {
       html: receipients.message,
     })
     .then((res) => {
-      if (res.data) {
-        return res.data;
+      if (res.status === 200) {
+        return { status: res.status, text: res.statusText };
       }
     })
     .catch((err) => {
-      return err;
+      return { status: err.status, text: "Something goes wrong!" };
     });
-    return responseEmail;
+
+  return responseEmail;
 }
 async function logoutUserFromFirebase(userId) {
   const functionUrl =
@@ -469,7 +496,6 @@ async function logoutUserFromFirebase(userId) {
     });
 }
 export const sendOTP = async (req, res) => {
-  console.log("gde si oziii");
   try {
     const email = req.query["params[email]"];
     const expirationTime = new Date();
@@ -506,20 +532,31 @@ export const sendOTP = async (req, res) => {
 
     const receipients = email;
 
-    await sendEmail({ receipients, subject, message })
+   await sendEmail({ receipients, subject, message })
       .then((result) => {
-        console.log("send Email success+++", result);
-        if (result) {
-          res.status(200).json({
+        if (result.status === 200) {
+          return res.status(200).json({
             success: true,
             status: 200,
           });
         }
+        if (result.status === 500) {
+          return res.status(500).json({
+            success: false,
+            message: result.text,
+            status: 500,
+          });
+        }
+        if (result.status === 404) {
+          return res.status(500).json({
+            success: false,
+            message: result.text,
+            status: 500,
+          });
+        }
       })
       .catch((err) => {
-        console.log("send Email err", err);
-
-        res.status(500).json({
+        return res.status(500).json({
           success: false,
           message: err,
           status: 500,
@@ -571,22 +608,35 @@ export const sendOTPviaLogin = async (req, res) => {
 
     await sendEmail({ receipients, subject, message })
       .then((result) => {
-        if (result) {
-          res.status(200).json({
+        if (result.status === 200) {
+          return res.status(200).json({
             success: true,
             status: 200,
           });
         }
+        if (result.status === 500) {
+          return res.status(500).json({
+            success: false,
+            message: result.text,
+            status: 500,
+          });
+        }
+        if (result.status === 404) {
+          return res.status(500).json({
+            success: false,
+            message: result.text,
+            status: 500,
+          });
+        }
       })
       .catch((err) => {
-        res.status(500).json({
+        return res.status(500).json({
           success: false,
           message: err,
           status: 500,
         });
       });
   } catch (error) {
-    console.log(error.message);
     return res.status(500).json({ success: false, error: error.message });
   }
 };
