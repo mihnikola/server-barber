@@ -51,7 +51,10 @@ exports.createReservation = async (req, res) => {
     const employerData = employerId === "" ? decoded.id : employerId;
     const status = customer !== "" ? 1 : 0;
     const timeStampValue = convertToTimeStamp(date?.dateString || date, time);
-    const dateTimeStringValue = updateTimeToTenUTC(date?.dateString || date, time);
+    const dateTimeStringValue = updateTimeToTenUTC(
+      date?.dateString || date,
+      time
+    );
 
     const newReservation = new Reservation({
       date: dateTimeStringValue,
@@ -66,14 +69,14 @@ exports.createReservation = async (req, res) => {
 
     await newReservation.save();
 
-    const reservationIdValue = newReservation._id; 
+    const reservationIdValue = newReservation._id;
 
     const taskData = {
       userId: decoded.id,
       status: "scheduled",
       performAt: timeStampValue,
       token: tokenExpo.token,
-      reservationId: reservationIdValue
+      reservationId: reservationIdValue,
     };
 
     sendTaskToBackend(taskData);
@@ -93,34 +96,65 @@ exports.getReservations = async (req, res) => {
     : req.get("authorization");
   if (!token) return res.status(403).send("Access denied");
   const { date, check, dateTimeStampValue } = req.query;
-  const utcDateTime = dateTimeStampValue;
+
+  // const utcDateTime = dateTimeStampValue;
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    const dateValue = date ? date : null;
-    const emplId = date ? decoded.id : null;
+    // const dateValue = date ? date : null;
+    // const emplId = date ? decoded.id : null;
     const customerId = date ? null : decoded.id;
-    let reservations = [];
-    if (!date) {
-      reservations = await Reservation.find({
-        user: customerId,
-        status: { $nin: [2] },
-        date:
-          check === "true"
-            ? { $gte: utcDateTime + ".000+00:00" }
-            : { $lte: utcDateTime + ".000+00:00" },
-      })
-        .sort({ date: 1 })
-        .populate("service")
-        .populate("employer");
-    } else {
-      reservations = await Reservation.find({
-        status: { $nin: [2] },
-        date: dateValue,
-        employer: emplId,
-      })
-        .populate("service") // Populate service data
-        .populate("user"); // Populate employee data
-    }
+    // let reservations = [];
+    // if (!date) {
+    // const reservations = await Reservation.find({
+    //   user: customerId,
+    //   status: { $nin: [2] },
+    // })
+    //   .sort({ date: 1 })
+    //   .populate("service")
+    //   .populate("employer");
+    const now = new Date(); // Trenutni datum i vreme
+
+    const futureReservations = await Reservation.find({
+      user: customerId,
+      date: { $gte: now },
+      // Možeš dodati i druge uslove, npr. status
+      status: { $nin: [2] },
+    })
+      .sort({ date: 1 })
+      .populate("service")
+      .populate("employer");
+
+    // Dohvaćanje prošlih rezervacija:
+    // Sortira od najstarijeg (daleka prošlost) do najnovijeg (skorašnja prošlost)
+    const pastReservations = await Reservation.find({
+      user: customerId,
+      date: { $lt: now },
+      // Možeš dodati i druge uslove, npr. status
+      status: { $nin: [2] },
+    })
+      .sort({ date: -1 })
+      .populate("service")
+      .populate("employer");
+    const modifiedPastReservations = pastReservations.map((reservation) => {
+      // Važno: Koristite .toObject() da biste radili sa čistim JS objektom,
+      // jer Mongoose dokumenti mogu biti 'frozen'
+      const reservationObj = reservation.toObject();
+      return { ...reservationObj, past: true };
+    });
+    const reservations = [...futureReservations, ...modifiedPastReservations];
+
+    // }
+    // else {
+    //   reservations = await Reservation.find({
+    //     status: { $nin: [2] },
+    //     date: dateValue,
+    //     employer: emplId,
+    //   })
+    //     .populate("service") // Populate service data
+    //     .populate("user"); // Populate employee data
+    // }
+
+    // console.log("object", reservations);
     res.status(200).json(reservations);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -175,7 +209,7 @@ exports.getReservationById = async (req, res) => {
 
   try {
     const reservationItem = await Reservation.findOne({ _id: id })
-      .populate({ 
+      .populate({
         path: "service",
         select: "id name duration price image",
         transform: (doc) => {
@@ -186,12 +220,12 @@ exports.getReservationById = async (req, res) => {
             );
           }
           return doc;
-        },  
+        },
       })
       .populate({
         path: "employer",
         select: "id name image",
-      transform: (doc) => {
+        transform: (doc) => {
           if (doc.image) {
             // Assuming the image field stores the relative path
             doc.image = prettyUrlDataImage(
@@ -200,7 +234,7 @@ exports.getReservationById = async (req, res) => {
           }
           return doc;
         },
-      }); 
+      });
     res.status(200).json(reservationItem);
   } catch (error) {
     res.status(500).json({ error: err.message });
