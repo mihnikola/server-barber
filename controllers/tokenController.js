@@ -37,7 +37,6 @@ exports.sendNotification = async (req, res) => {
 };
 // API route to save token
 async function updateTokenFirebase(userId, token) {
-
   const functionUrl =
     "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/updateTokenExpoPushToFirestore";
   await axios
@@ -49,6 +48,8 @@ async function updateTokenFirebase(userId, token) {
       console.log("err", err);
     });
 }
+
+
 
 exports.saveToken = async (req, res) => {
   const { tokenExpo, tokenUser } = req.body;

@@ -227,11 +227,12 @@ export const createUser = async (req, res) => {
 
     const receipients = email;
 
-   await sendEmail({ receipients, subject, message })
+    await sendEmail({ receipients, subject, message })
       .then((result) => {
         if (result.status === 200) {
           return res.status(200).json({
             success: true,
+             message: "User created successfully! Please verified your account.",
             status: 200,
           });
         }
@@ -262,9 +263,7 @@ export const createUser = async (req, res) => {
       message: "User created successfully! Please verified your account.",
     });
   } catch (err) {
-    res
-      .status(500)
-      .send({ status: 500, message: "Something Went Wrong, Please Try Again" });
+    res.status(500).send({ status: 500, message: "Something Went Wrong, Please Try Again" });
   }
 };
 
@@ -384,6 +383,7 @@ export const loginUser = async (req, res) => {
     const token = jwt.sign(userData, process.env.JWT_SECRET_KEY, {
       expiresIn: "10000000m",
     });
+    
     res.status(200).json({ status: 200, token, userId: user._id });
   } catch (err) {
     res
@@ -532,7 +532,7 @@ export const sendOTP = async (req, res) => {
 
     const receipients = email;
 
-   await sendEmail({ receipients, subject, message })
+    await sendEmail({ receipients, subject, message })
       .then((result) => {
         if (result.status === 200) {
           return res.status(200).json({
