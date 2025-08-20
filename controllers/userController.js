@@ -22,13 +22,10 @@ export const patchUser = async (req, res) => {
     const { name, phoneNumber } = req.body;
     const updateData = {};
 
-    console.log("object", name, phoneNumber);
     if (name !== "null") {
-      console.log("name", name);
       updateData.name = name;
     }
-    if (phoneNumber !== "null" && phoneNumber !== null) {
-      console.log("phoneNumber", phoneNumber);
+    if (phoneNumber !== "null" && phoneNumber !== null || phoneNumber === "") {
       updateData.phoneNumber = phoneNumber;
     }
 
@@ -175,9 +172,9 @@ export const createAdminUser = async (req, res) => {
 // Create a new user
 export const createUser = async (req, res) => {
   const { name, email, password, phoneNumber } = req.body;
-  if (!name || !email || !password || !phoneNumber) {
+  if (!name || !email || !password) {
     return res.status(400).json({
-      message: "Name, email, password and phone number are required.",
+      message: "Name, email, password are required.",
     });
   }
 
