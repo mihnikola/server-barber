@@ -21,11 +21,13 @@ export const patchUser = async (req, res) => {
 
     const { name, phoneNumber } = req.body;
     const updateData = {};
-
     if (name !== "null") {
       updateData.name = name;
     }
-    if (phoneNumber !== "null" && phoneNumber !== null || phoneNumber === "") {
+
+    if (phoneNumber === "+381") {
+      updateData.phoneNumber = "";
+    } else if (phoneNumber !== "null" && phoneNumber !== null) {
       updateData.phoneNumber = phoneNumber;
     }
 
@@ -228,7 +230,7 @@ export const createUser = async (req, res) => {
         if (result.status === 200) {
           return res.status(200).json({
             success: true,
-             message: "User created successfully! Please verified your account.",
+            message: "User created successfully! Please verified your account.",
             status: 200,
           });
         }
@@ -259,7 +261,9 @@ export const createUser = async (req, res) => {
       message: "User created successfully! Please verified your account.",
     });
   } catch (err) {
-    res.status(500).send({ status: 500, message: "Something Went Wrong, Please Try Again" });
+    res
+      .status(500)
+      .send({ status: 500, message: "Something Went Wrong, Please Try Again" });
   }
 };
 
@@ -379,7 +383,7 @@ export const loginUser = async (req, res) => {
     const token = jwt.sign(userData, process.env.JWT_SECRET_KEY, {
       expiresIn: "10000000m",
     });
-    
+
     res.status(200).json({ status: 200, token, userId: user._id });
   } catch (err) {
     res
@@ -396,7 +400,7 @@ export const getUsers = async (req, res) => {
         id: user._id,
         name: user.name,
         role: user.role,
-        image: user.image
+        image: user.image,
       };
     });
     res.status(200).json({ status: 200, data: usersData });
