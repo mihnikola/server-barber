@@ -7,7 +7,6 @@ import fetch from "node-fetch";
 import path from "path"; // Needed for path.extname in multer
 import { put } from "@vercel/blob";
 import multer from "multer";
-import { prettyUrlDataImage } from "../helpers/utils.js";
 import otpGenerator from "otp-generator";
 import VerificationOtpCode from "../models/OtpModel.js"; // Assuming User model also uses ES modules
 import axios from "axios";
@@ -400,7 +399,7 @@ export const getUsers = async (req, res) => {
         id: user._id,
         name: user.name,
         role: user.role,
-        image: prettyUrlDataImage(`${process.env.API_URL}/${user.image}`),
+        image: user.image
       };
     });
     res.status(200).json({ status: 200, data: usersData });
