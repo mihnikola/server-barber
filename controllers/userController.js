@@ -370,7 +370,7 @@ export const loginUser = async (req, res) => {
       return res.status(202).json({
         status: 606,
         message:
-          "Your account is not verify yet, otp code will be send to your email.",
+          "Your account is not verified yet. Verification code will be sent to your email.",
       });
     }
     const userData = {
