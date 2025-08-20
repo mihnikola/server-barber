@@ -112,11 +112,16 @@ exports.getReservations = async (req, res) => {
     //   .sort({ date: 1 })
     //   .populate("service")
     //   .populate("employer");
-    const now = new Date(); // Trenutni datum i vreme
+    const now = new Date();
+    const localeDateTime = now.toLocaleString();
+    const localDate = new Date(localeDateTime);
+
+    const isoString = localDate.toISOString();
+    const desiredFormat = isoString.replace("Z", "+00:00");
 
     const futureReservations = await Reservation.find({
       user: customerId,
-      date: { $gte: now },
+      date: { $gte: desiredFormat },
       // Možeš dodati i druge uslove, npr. status
       status: { $nin: [2] },
     })
@@ -128,7 +133,7 @@ exports.getReservations = async (req, res) => {
     // Sortira od najstarijeg (daleka prošlost) do najnovijeg (skorašnja prošlost)
     const pastReservations = await Reservation.find({
       user: customerId,
-      date: { $lt: now },
+      date: { $lt: desiredFormat },
       // Možeš dodati i druge uslove, npr. status
       status: { $nin: [2] },
     })
@@ -228,8 +233,7 @@ exports.getReservationById = async (req, res) => {
         transform: (doc) => {
           if (doc.image) {
             // Assuming the image field stores the relative path
-            doc.image = doc.image
-            
+            doc.image = doc.image;
           }
           return doc;
         },
