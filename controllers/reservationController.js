@@ -129,7 +129,7 @@ exports.getReservations = async (req, res) => {
     // Create a Date object. Month is 0-indexed in JavaScript Date constructor.
     const dateValue = `${year}-${monthValue}-${dayValue}T${hourValue}:${minuteValue}:${secondValue}.000+00:00`;
 
-    console.log("ISO 8601 String:", dateValue, decoded); // Output: 2025-08-23T14:43:56.000Z
+    console.log("ISO 8601:", dateValue); // Output: 2025-08-23T14:43:56.000Z
 
     const futureReservations = await Reservation.find({
       user: customerId,
@@ -148,10 +148,11 @@ exports.getReservations = async (req, res) => {
       .sort({ date: -1 })
       .populate("service")
       .populate("employer");
-    const modifiedPastReservations = pastReservations.map((reservation) => ({
-      ...reservation,
-      past: true,
-    }));
+
+    const modifiedPastReservations = pastReservations?.map((reservation) => {
+      const reservationObj = reservation.toObject();
+      return { ...reservationObj, past: true };
+    });
     const reservations = [...futureReservations, ...modifiedPastReservations];
 
     console.log("futureReservations", futureReservations);
