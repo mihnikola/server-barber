@@ -8,6 +8,7 @@ const router = express.Router();
 // Create a new service
 router.post('/', userController.createUser);
 router.post('/login', userController.loginUser);
+router.post('/loginViaGoogle', userController.loginViaGoogle);
 router.get('/email', userController.sendOTP);
 router.get('/sendOTPviaLogin', userController.sendOTPviaLogin);
 router.get('/otpcode', userController.verifyOtpCode);

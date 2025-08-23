@@ -95,73 +95,59 @@ exports.getReservations = async (req, res) => {
     ? req.body.headers.Authorization
     : req.get("authorization");
   if (!token) return res.status(403).send("Access denied");
-  const { date, check, dateTimeStampValue } = req.query;
+  const { date } = req.query;
 
-  // const utcDateTime = dateTimeStampValue;
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    // const dateValue = date ? date : null;
-    // const emplId = date ? decoded.id : null;
-    const customerId = date ? null : decoded.id;
-    // let reservations = [];
-    // if (!date) {
-    // const reservations = await Reservation.find({
-    //   user: customerId,
-    //   status: { $nin: [2] },
-    // })
-    //   .sort({ date: 1 })
-    //   .populate("service")
-    //   .populate("employer");
-    const now = new Date();
-    const localeDateTime = now.toLocaleString();
-    const localDate = new Date(localeDateTime);
 
-    const isoString = localDate.toISOString();
-    const desiredFormat = isoString.replace("Z", "+00:00");
+    const customerId = date ? null : decoded.id;
+
+    const now = new Date();
+    const localDateString = now.toLocaleString("en-GB"); // Correct: calls toLocaleString() on the Date object
+    const [datePart, timePart] = localDateString.split(", ");
+    const [day, month, year] = datePart.split("/").map(Number);
+    const [hours, minutes, seconds] = timePart.split(":").map(Number);
+
+
+    const monthValue = month.toString().length > 1 ? month : `0${month}`;
+    const dayValue = day.toString().length > 1 ? day : `0${day}`;
+    const minuteValue = minutes.toString().length > 1 ? minutes : `0${minutes}`;
+    const hourValue = hours.toString().length > 1 ? hours : `0${hours}`;
+    const secondValue = seconds.toString().length > 1 ? seconds : `0${seconds}`;
+
+    // Create a Date object. Month is 0-indexed in JavaScript Date constructor.
+    const dateValue = `${year}-${monthValue}-${dayValue}T${hourValue}:${minuteValue}:${secondValue}.000+00:00`;
+
+    console.log("ISO 8601 String:", dateValue,decoded); // Output: 2025-08-23T14:43:56.000Z
 
     const futureReservations = await Reservation.find({
       user: customerId,
-      date: { $gte: desiredFormat },
-      // Možeš dodati i druge uslove, npr. status
+      date: { $gt: dateValue },
       status: { $nin: [2] },
     })
       .sort({ date: 1 })
       .populate("service")
       .populate("employer");
 
-    // Dohvaćanje prošlih rezervacija:
-    // Sortira od najstarijeg (daleka prošlost) do najnovijeg (skorašnja prošlost)
+
     const pastReservations = await Reservation.find({
       user: customerId,
-      date: { $lt: desiredFormat },
-      // Možeš dodati i druge uslove, npr. status
+      date: { $lt: dateValue },
       status: { $nin: [2] },
     })
       .sort({ date: -1 })
       .populate("service")
       .populate("employer");
-    const modifiedPastReservations = pastReservations.map((reservation) => {
-      // Važno: Koristite .toObject() da biste radili sa čistim JS objektom,
-      // jer Mongoose dokumenti mogu biti 'frozen'
+    const modifiedPastReservations = pastReservations?.map((reservation) => {
       const reservationObj = reservation.toObject();
       return { ...reservationObj, past: true };
     });
     const reservations = [...futureReservations, ...modifiedPastReservations];
 
-    // }
-    // else {
-    //   reservations = await Reservation.find({
-    //     status: { $nin: [2] },
-    //     date: dateValue,
-    //     employer: emplId,
-    //   })
-    //     .populate("service") // Populate service data
-    //     .populate("user"); // Populate employee data
-    // }
-
-    // console.log("object", reservations);
+ 
     res.status(200).json(reservations);
   } catch (err) {
+    console.log("errorcina", err);
     res.status(500).json({ error: err.message });
   }
 };
