@@ -103,25 +103,37 @@ exports.getReservations = async (req, res) => {
 
     const now = new Date();
 
-    // Get local date components
-    const year = now.getFullYear();
-    const month = (now.getMonth() + 1).toString().padStart(2, "0");
-    const day = now.getDate().toString().padStart(2, "0");
+    // Set the time zone to your specific location
+    const options = {
+      timeZone: "Europe/Belgrade", // This covers Serbia
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false, // Use 24-hour format
+    };
 
-    // Get local time components
-    const hours = now.getHours().toString().padStart(2, "0");
-    const minutes = now.getMinutes().toString().padStart(2, "0");
-    const seconds = now.getSeconds().toString().padStart(2, "0");
+    const localDateString = now.toLocaleString("en-GB", options);
+    const [datePart, timePart] = localDateString.split(", ");
+    const [day, month, year] = datePart.split("/").map(Number);
+    const [hours, minutes, seconds] = timePart.split(":").map(Number);
 
-    // Construct the string
-    const localISOString = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.000+00:00`;
+    const monthValue = month.toString().length > 1 ? month : `0${month}`;
+    const dayValue = day.toString().length > 1 ? day : `0${day}`;
+    const minuteValue = minutes.toString().length > 1 ? minutes : `0${minutes}`;
+    const hourValue = hours.toString().length > 1 ? hours : `0${hours}`;
+    const secondValue = seconds.toString().length > 1 ? seconds : `0${seconds}`;
 
+    // Create a Date object. Month is 0-indexed in JavaScript Date constructor.
+    const dateValue = `${year}-${monthValue}-${dayValue}T${hourValue}:${minuteValue}:${secondValue}.000+00:00`;
 
-    console.log("ISO 8601 String:", localISOString, decoded); // Output: 2025-08-23T14:43:56.000Z
+    console.log("ISO 8601 String:", dateValue, decoded); // Output: 2025-08-23T14:43:56.000Z
 
     const futureReservations = await Reservation.find({
       user: customerId,
-      date: { $gt: localISOString },
+      date: { $gt: dateValue },
       status: { $nin: [2] },
     })
       .sort({ date: 1 })
@@ -130,7 +142,7 @@ exports.getReservations = async (req, res) => {
 
     const pastReservations = await Reservation.find({
       user: customerId,
-      date: { $lt: localISOString },
+      date: { $lt: dateValue },
       status: { $nin: [2] },
     })
       .sort({ date: -1 })
