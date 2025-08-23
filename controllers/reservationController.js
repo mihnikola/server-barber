@@ -141,7 +141,12 @@ exports.getReservations = async (req, res) => {
     }));
     const reservations = [...futureReservations, ...modifiedPastReservations];
 
+    console.log("futureReservations", futureReservations);
+    console.log("modifiedPastReservations", modifiedPastReservations);
+    console.log("pastReservations", pastReservations);
+
     console.log("reservations", reservations);
+    
     res.status(200).json(reservations);
   } catch (err) {
     console.log("errorcina", err);
