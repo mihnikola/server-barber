@@ -95,12 +95,11 @@ exports.getReservations = async (req, res) => {
     ? req.body.headers.Authorization
     : req.get("authorization");
   if (!token) return res.status(403).send("Access denied");
-  const { date } = req.query;
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
-    const customerId = date ? null : decoded.id;
+    const customerId = decoded.id;
 
     const now = new Date();
     const localDateString = now.toLocaleString("en-GB"); // Correct: calls toLocaleString() on the Date object
