@@ -143,7 +143,7 @@ exports.getReservations = async (req, res) => {
     });
     const reservations = [...futureReservations, ...modifiedPastReservations];
 
- 
+    console.log("reservations",reservations)
     res.status(200).json(reservations);
   } catch (err) {
     console.log("errorcina", err);
