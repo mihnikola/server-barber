@@ -553,12 +553,10 @@ export const sendOTP = async (req, res) => {
     const expirationTime = new Date();
     expirationTime.setSeconds(expirationTime.getSeconds() + 40); // Add 10 seconds
     const checkUserPresent = await User.findOne({ email });
-
     if (!checkUserPresent) {
-      return res.status(400).json({
+      return res.status(200).json({
         success: false,
-        message: "Entered email not found",
-        status: 400,
+        status: 200,
       });
     }
     let otp = otpGenerator.generate(6, {
