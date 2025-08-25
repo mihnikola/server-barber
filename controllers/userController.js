@@ -557,7 +557,7 @@ export const sendOTP = async (req, res) => {
     if (!checkUserPresent) {
       return res.status(400).json({
         success: false,
-        message: "Wrong email",
+        message: "Entered email not found",
         status: 400,
       });
     }
