@@ -399,59 +399,41 @@ export const loginUser = async (req, res) => {
 export const loginViaGoogle = async (req, res) => {
   try {
     const { user } = req.body;
+
     const { email, name, id, photo } = user;
-    const userData = await User.findOne({ email }); // `findOne` is typically better if you expect a single result
 
-    if (userData) {
-      const userDataToken = {
-        id: userData._id.toHexString(),
-        email: userData.email,
-      };
+    let userData = await User.findOne({ email }); // `findOne` is typically better if you expect a single result
 
-      const token = jwt.sign(userDataToken, process.env.JWT_SECRET_KEY, {
-        expiresIn: "10000000m",
+    if (!userData) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(id, salt);
+
+      const newUser = new User({
+        name,
+        email,
+        password: hashedPassword,
+        isVerified: true,
+        image: photo,
       });
 
-      return res.status(200).json({
-        status: 200,
-        token,
-        message: "Login Successfully",
-        userId: userData._id,
-      });
+      userData = await newUser.save();
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(id, salt);
+    const userDataToken = {
+      id: userData._id.toHexString(),
+      email: userData.email,
+    };
 
-    const newUser = new User({
-      name,
-      email,
-      password: hashedPassword,
-      isVerified: true,
-      image: photo,
+    const token = jwt.sign(userDataToken, process.env.JWT_SECRET_KEY, {
+      expiresIn: "10000000m",
     });
 
-    await newUser.save();
-
-    const userDataCheck = await User.findOne({ email }); // `findOne` is typically better if you expect a single result
-
-    if (userDataCheck) {
-      const userDataToken = {
-        id: userDataCheck._id.toHexString(),
-        email: userDataCheck.email,
-      };
-
-      const token = jwt.sign(userDataToken, process.env.JWT_SECRET_KEY, {
-        expiresIn: "10000000m",
-      });
-
-      return res.status(300).json({
-        status: 300,
-        token,
-        message: "Login Successfully",
-        userId: userDataCheck._id,
-      });
-    }
+    return res.status(200).json({
+      status: 200,
+      token,
+      message: "Login Successfully",
+      userId: userData._id,
+    });
   } catch (err) {
     return res
       .status(500)
