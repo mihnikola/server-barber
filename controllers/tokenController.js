@@ -11,7 +11,7 @@ exports.sendNotification = async (req, res) => {
     sound: "default",
     title: title,
     body: content,
-    data: { someData: data },
+    data,
   };
   await fetch("https://exp.host/--/api/v2/push/send", {
     method: "POST",
@@ -23,6 +23,7 @@ exports.sendNotification = async (req, res) => {
     body: JSON.stringify(message),
   })
     .then((solve) => {
+      console.log("solve++",solve)
       if (solve.status === 400) {
         res
           .status(500)
@@ -32,6 +33,8 @@ exports.sendNotification = async (req, res) => {
       }
     })
     .catch((err) => {
+      console.log("solve++",err)
+
       res.status(500).send("Notification cannot successfully");
     });
 };
