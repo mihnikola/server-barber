@@ -41,7 +41,7 @@ async function sendTaskToBackend(taskData) {
 
 exports.createReservation = async (req, res) => {
   try {
-    const { date, time, service_id, token, customer, employerId } =
+    const { date, time, service_id, token, customer, employerId, description } =
       req.body.params;
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     const tokenExpo = await Token.findOne({ user: decoded.id });
@@ -65,6 +65,7 @@ exports.createReservation = async (req, res) => {
       customer: customerName,
       status,
       rate: null,
+      description
     });
 
     await newReservation.save();
