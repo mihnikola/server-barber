@@ -4,7 +4,9 @@ const bodyParser = require("body-parser");
 const app = express();
 
 const tokenRoutes = require('./routes/tokenRoutes');
+const reservationAdminRoutes = require('./routes/reservationAdminRoutes');
 const userRoutes = require("./routes/userRoutes");
+const userAdminRoutes = require("./routes/userAdminRoutes");
 const serviceRoutes = require("./routes/serviceRoutes");
 const reservationRoutes = require("./routes/reservationRoutes");
 const notificationsRoutes = require("./routes/notificationRoutes");
@@ -26,6 +28,8 @@ app.use('/images', express.static('images')); // Za fajlove u 'images' folderu, 
 // --- Definisanje ruta ---
 app.use('/api',tokenRoutes);
 app.use("/users", userRoutes);
+app.use("/admin/reservations", reservationAdminRoutes);
+app.use("/admin/users", userAdminRoutes);
 app.use("/services", serviceRoutes);
 app.use("/reservations", reservationRoutes);
 app.use("/times", timesRoutes);

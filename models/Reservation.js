@@ -35,6 +35,11 @@ const reservationSchema = new mongoose.Schema(
     status: {
       type: Number,
     },
+    approved: {
+      type: Number,
+    },
+    //status .... default active reservation 0 or cancel reservation 2
+    //approved ... default check reservation 1 or skip reservation 0
   },
   { timestamps: true }
 );

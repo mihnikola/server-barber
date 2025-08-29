@@ -65,6 +65,8 @@ exports.createReservation = async (req, res) => {
       customer: customerName,
       status,
       rate: null,
+      approved: 1,
+      status: 0,
       description,
     });
 
