@@ -65,6 +65,8 @@ exports.createReservation = async (req, res) => {
       customer: customerName,
       status,
       rate: null,
+      approved: 1,
+      status: 0,
       description,
     });
 
@@ -190,36 +192,6 @@ exports.getReservationById = async (req, res) => {
       });
     res.status(200).json(reservationItem);
   } catch (error) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// Get all reservations by admin
-exports.getAdminReservations = async (req, res) => {
-  const token = req.header("Authorization")
-    ? req.header("Authorization").split(" ")[1]
-    : req.body.headers.Authorization
-    ? req.body.headers.Authorization
-    : req.get("authorization");
-  if (!token) return res.status(403).send("Access denied");
-
-  try {
-    const { dateReservation } = req.params;
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-
-    const employerId = decoded.id;
-
-    const reservations = await Reservation.find({
-      employer: employerId,
-      date: dateReservation,
-      status: { $nin: [2] },
-    })
-      .sort({ date: 1 })
-      .populate("service")
-      .populate("user");
-    res.status(200).json(reservations);
-  } catch (err) {
-    console.log("errorcina", err);
     res.status(500).json({ error: err.message });
   }
 };
