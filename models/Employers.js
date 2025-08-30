@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const userSchema = new mongoose.Schema(
+const employersSchema = new mongoose.Schema(
   {
     name: {
       type: String,
@@ -15,7 +15,9 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-
+    role: {
+      type: String,
+    },
     image: {
       type: String,
     },
@@ -33,6 +35,6 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const User = mongoose.model("User", userSchema);
+const Employers = mongoose.model("Employers", employersSchema);
 
-module.exports = User;
+module.exports = Employers;

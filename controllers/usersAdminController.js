@@ -1,49 +1,233 @@
 import User from "../models/User.js"; // Assuming User model also uses ES modules
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import fs from "fs";
-import fetch from "node-fetch";
 
-import path from "path"; // Needed for path.extname in multer
-import { put } from "@vercel/blob";
-import multer from "multer";
-import otpGenerator from "otp-generator";
-import VerificationOtpCode from "../models/OtpModel.js"; // Assuming User model also uses ES modules
-import axios from "axios";
 
-// 3. Unified controller
-
-export const patchUser = async (req, res) => {
+//CLIENTS TAB BEGIN
+export const getClients = async (req, res) => {
   try {
-    const userDataId = req.params.id;
-    const decoded = jwt.verify(userDataId, process.env.JWT_SECRET_KEY);
-    const { id: userId } = decoded;
+    const page = parseInt(req.query.page) || 1; // Default to page 1 if not specified
+    const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page
+    const skip = (page - 1) * limit;
+    const currentDate = new Date();
 
-    const { name, phoneNumber } = req.body;
+    const result = await User.aggregate([
+      // Step 1: Filter verified users
+      {
+        $match: {
+          isVerified: true,
+        },
+      },
+      // Step 2: Join users with their reservations
+      {
+        $lookup: {
+          from: "reservations",
+          localField: "_id",
+          foreignField: "user",
+          as: "reservations",
+        },
+      },
+      // Step 3: Deconstruct the reservations array
+      {
+        $unwind: {
+          path: "$reservations",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      // Step 4: Filter reservations based on status and date
+      {
+        $match: {
+          "reservations.status": 0,
+          "reservations.date": { $lt: currentDate },
+        },
+      },
+      // Step 5: Join with the services collection to get the price
+      {
+        $lookup: {
+          from: "services",
+          localField: "reservations.service",
+          foreignField: "_id",
+          as: "serviceDetails",
+        },
+      },
+      // Step 6: Add servicePrice field
+      {
+        $addFields: {
+          servicePrice: { $first: "$serviceDetails.price" },
+        },
+      },
+      // Step 7: Group by user ID
+      {
+        $group: {
+          _id: "$_id",
+          name: { $first: "$name" },
+          image: { $first: "$image" },
+          phoneNumber: { $first: "$phoneNumber" },
+          approvedCount: {
+            $sum: {
+              $cond: [{ $eq: ["$reservations.approved", 1] }, 1, 0],
+            },
+          },
+          skippedCount: {
+            $sum: {
+              $cond: [{ $eq: ["$reservations.approved", 0] }, 1, 0],
+            },
+          },
+          totalPrice: {
+            $sum: {
+              $cond: [
+                { $eq: ["$reservations.approved", 1] },
+                "$servicePrice",
+                0,
+              ],
+            },
+          },
+        },
+      },
+      // Step 8: Use $facet for pagination and total count in one go
+      {
+        $facet: {
+          // Pipeline to get paginated results
+          users: [{ $skip: skip }, { $limit: limit }],
+          // Pipeline to get the total count
+          totalCount: [{ $count: "count" }],
+        },
+      },
+    ]);
+
+    // Extract the results from the $facet output
+    const users = result[0].users;
+    const total =
+      result[0].totalCount.length > 0 ? result[0].totalCount[0].count : 0;
+
+    // Send the paginated data and total count in the response
+    res.status(200).json({
+      status: 200,
+      users: users,
+      totalCount: total,
+      page: page,
+      limit: limit,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+export const findClient = async (req, res) => {
+  try {
+    const { name: partialName } = req.body;
+    const userData = await User.find({
+      name: { $regex: partialName, $options: "i" },
+      isVerified: true,
+    });
+    res.status(200).json(userData);
+  } catch (err) {
+    console.log("errorcina", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+export const getClient = async (req, res) => {
+  try {
+    const clientId = req.params.id;
+    const user = await User.findOne({ _id: clientId });
+    const userData = {
+      id: user._id,
+      name: user.name,
+      image: user?.image,
+      phoneNumber: user?.phoneNumber,
+    };
+    res.status(200).json({ status: 200, userData });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+//(patch or delete)
+export const patchClientUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const { deActivated } = req.body;
     const updateData = {};
-    if (name !== "null") {
-      updateData.name = name;
+
+    if (deActivated !== false) {
+      updateData.deActivated = deActivated;
     }
 
-    if (phoneNumber === "+381") {
-      updateData.phoneNumber = "";
-    } else if (phoneNumber !== "null" && phoneNumber !== null) {
-      updateData.phoneNumber = phoneNumber;
+    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+      new: true,
+    });
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
     }
 
-    if (req.file && req.file.buffer) {
-      console.log("kdaskdaskdasd i ti a");
+    res.status(200).json({
+      message: "User deactivated successfully",
+      user: updatedUser,
+    });
+  } catch (err) {
+    console.error("Error in patchUser:", err);
+    res.status(500).json({ status: 500, message: err });
+  }
+};
+//CLIENTS TAB END
 
-      const fileName = `${Date.now()}-${req.file.originalname}`;
 
-      // ✅ Upload to Vercel Blob using SDK
-      const blob = await put(fileName, req.file.buffer, {
-        access: "public", // 👈 MAKE IT PUBLIC
-        token: process.env.BLOB_READ_WRITE_TOKEN,
-      });
 
-      updateData.image = blob.url; // ✅ This is a public URL
-    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+//SETTINGS EDIT PROFILE ADMIN BEGIN
+export const geAdmin = async (req, res) => {
+  try {
+    const adminId = req.params.id;
+
+    const user = await User.findOne({ _id: adminId });
+
+    const userData = {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      image: user?.image,
+    };
+
+    res.status(200).json({ status: 200, data: userData });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+export const patchAdminUser = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    // 🔐 1. Decode JWT from URL (e.g., /user/update/:token)
+    const email = req.params.id;
+
+    const user = await User.findOne({ email });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const { password } = req.body;
+
+    // 🧾 3. Prepare update fields
+    const updateFields = {};
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    if (password) updateFields.password = hashedPassword;
+    // 🛠️ 4. Update user in MongoDB
+
+    const x = await User.findByIdAndUpdate(user._id, updateFields, {
+      new: true,
+    });
 
     if (Object.keys(updateData).length === 0) {
       console.log("nece da moze");
@@ -70,7 +254,6 @@ export const patchUser = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 export const logout = async (req, res) => {
   const { token } = req.body;
 
@@ -88,8 +271,66 @@ export const logout = async (req, res) => {
   }
 };
 
+//SETTINGS EDIT PROFILE ADMIN END
+
+
+
+//LOGIN USER ADMIN BEGIN
+export const loginUser = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    // Find the user in the "database"
+    const user = await User.findOne({ username }); // `findOne` is typically better if you expect a single result
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
+
+    // Compare the password with the hashed password stored in the database
+    const isPasswordMatch = await bcrypt.compare(password, user.password);
+
+    if (!isPasswordMatch) {
+      return res.status(400).json({ message: "Not match password" });
+    }
+
+    // if (!user.isVerified) {
+    //   return res.status(400).json({ message: "Not verified" });
+    // }
+
+    // if (user.role !== "administrator") {
+    //   if (user.role !== "employer") {
+    //     return res.status(400).json({ message: "Not permission" });
+    //   }
+    // }
+
+    const userData = {
+      id: user._id,
+      // role: user.role,
+      username: user.username,
+    };
+
+    // Create JWT token
+    const token = jwt.sign(userData, process.env.JWT_SECRET_KEY, {
+      expiresIn: "10000000m",
+    });
+    res.status(200).json({ status: 200, data: token });
+    // Send the token as a response
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+//LOGIN USER ADMIN END
+
+
+
+
+
+
+//ovo su moji servisi za kreiranje radnika
+
 // Create a new user
-export const createAdmin = async (req, res) => {
+export const createAdminUser = async (req, res) => {
   const { name, email, password, phoneNumber } = req.body;
   if (!name || !email || !password) {
     return res.status(400).json({
@@ -113,302 +354,16 @@ export const createAdmin = async (req, res) => {
       email,
       password: hashedPassword,
       phoneNumber,
-      isVerified: false,
+      isVerified: true,
     });
     await newUser.save();
 
-    const expirationTime = new Date();
-    expirationTime.setSeconds(expirationTime.getSeconds() + 40); // Add 10 seconds
-    let otp = otpGenerator.generate(6, {
-      upperCaseAlphabets: false,
-      lowerCaseAlphabets: false,
-      specialChars: false,
-    });
-    let result = await VerificationOtpCode.findOne({ otp: otp });
-
-    while (result) {
-      otp = otpGenerator.generate(6, {
-        upperCaseAlphabets: false,
-      });
-      result = await VerificationOtpCode.findOne({ otp: otp });
-    }
-
-    const otpPayload = { email, otp, expireAt: expirationTime };
-    await VerificationOtpCode.create(otpPayload);
-
-    const subject = "Registration";
-
-    const message = `Your otp code is ${otp}`;
-
-    const receipients = email;
-
-    await sendEmail({ receipients, subject, message })
-      .then((result) => {
-        if (result.status === 200) {
-          return res.status(200).json({
-            success: true,
-            message: "User created successfully! Please verified your account.",
-            status: 200,
-          });
-        }
-        if (result.status === 500) {
-          return res.status(500).json({
-            success: false,
-            message: result.text,
-            status: 500,
-          });
-        }
-        if (result.status === 404) {
-          return res.status(500).json({
-            success: false,
-            message: result.text,
-            status: 500,
-          });
-        }
-      })
-      .catch((err) => {
-        return res.status(500).json({
-          success: false,
-          message: err,
-          status: 500,
-        });
-      });
-
     res.status(201).json({
-      message: "User created successfully! Please verified your account.",
+      message: "User created successfully!",
     });
   } catch (err) {
     res
       .status(500)
       .send({ status: 500, message: "Something Went Wrong, Please Try Again" });
-  }
-};
-
-//loginAdminUser
-export const loginUser = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    // Find the user in the "database"
-    const user = await User.findOne({ email }); // `findOne` is typically better if you expect a single result
-
-    if (!user) {
-      return res.status(400).json({ message: "Invalid email or password" });
-    }
-
-    // Compare the password with the hashed password stored in the database
-    const isPasswordMatch = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordMatch) {
-      return res.status(400).json({ message: "Not match password" });
-    }
-
-    if (!user.isVerified) {
-      return res.status(400).json({ message: "Not verified" });
-    }
-
-    if (user.role !== "administrator") {
-      if (user.role !== "employer") {
-        return res.status(400).json({ message: "Not permission" });
-      }
-    }
-
-    const userData = {
-      id: user._id,
-      role: user.role,
-    };
-
-    // Create JWT token
-    const token = jwt.sign(userData, process.env.JWT_SECRET_KEY, {
-      expiresIn: "10000000m",
-    });
-    res.status(200).json({ token });
-    // Send the token as a response
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-export const getClients = async (req, res) => {
-  try {
-    // const users = await User.find({
-    //   role: { $exists: false },
-    //   isVerified: true,
-    // });
-    // const usersData = users.map((user) => {
-    //   return {
-    //     id: user._id,
-    //     name: user.name,
-    //     image: user.image,
-    //   };
-    // });
-    const currentDate = new Date();
-    const userApprovedStatusCounts = await User.aggregate([
-      {
-        $match: {
-          isVerified: true,
-        },
-      },
-      {
-        $lookup: {
-          from: "reservations",
-          localField: "_id",
-          foreignField: "user",
-          as: "reservations",
-        },
-      },
-      {
-        $unwind: {
-          path: "$reservations",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $addFields: {
-          // Create a normalized status based on 'approved' field
-          reservationApprovedStatus: {
-            $switch: {
-              branches: [
-                {
-                  case: { $eq: ["$reservations.approved", 1] },
-                  then: "approved",
-                },
-                {
-                  case: { $eq: ["$reservations.approved", 0] },
-                  then: "skipped",
-                }, // Using "skipped" to avoid confusion with "skip" operation
-              ],
-              default: "no_reservation", // For users with no reservations or null 'approved' field
-            },
-          },
-        },
-      },
-      {
-        $match: {
-          "reservations.status": 0,
-          "reservations.date": { $lt: currentDate },
-        },
-      },
-      {
-        $group: {
-          _id: "$_id", // Group by user ID
-          name: { $first: "$name" }, // Get the user's name
-          approvedCount: {
-            $sum: {
-              $cond: [
-                { $eq: ["$reservationApprovedStatus", "approved"] },
-                1,
-                0,
-              ],
-            },
-          },
-          skippedCount: {
-            $sum: {
-              $cond: [{ $eq: ["$reservationApprovedStatus", "skipped"] }, 1, 0],
-            },
-          },
-        },
-      },
-      {
-        $project: {
-          // Project to clean up the output and remove noReservationCount if it's 0
-          _id: 1,
-          name: 1,
-          approvedCount: 1,
-          skippedCount: 1,
-          // Only include noReservationCount if it's greater than 0, otherwise it means the user had reservations
-          noReservationCount: {
-            $cond: [
-              { $gt: ["$noReservationCount", 0] },
-              "$noReservationCount",
-              "$$REMOVE",
-            ],
-          },
-        },
-      },
-    ]);
-
-    console.log(userApprovedStatusCounts);
-    res.status(200).json({ status: 200, data: userApprovedStatusCounts });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-export const geAdmin = async (req, res) => {
-  try {
-    const token = req.params.id;
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    console.log("getUser++", token);
-
-    const user = await User.findOne({ _id: decoded.id });
-
-    const userData = {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      image: user?.image,
-      phoneNumber: user?.phoneNumber,
-    };
-
-    res.status(200).json({ status: 200, data: userData });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-export const getClient = async (req, res) => {
-  try {
-    const token = req.params.id;
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    console.log("getUser++", token);
-
-    const user = await User.findOne({ _id: decoded.id });
-
-    const userData = {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      image: user?.image,
-      phoneNumber: user?.phoneNumber,
-    };
-
-    res.status(200).json({ status: 200, data: userData });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// 3. Unified controller
-export const changeUserPassword = async (req, res) => {
-  try {
-    // 🔐 1. Decode JWT from URL (e.g., /user/update/:token)
-    const email = req.params.id;
-
-    const user = await User.findOne({ email });
-
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    const { password } = req.body;
-
-    // 🧾 3. Prepare update fields
-    const updateFields = {};
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    if (password) updateFields.password = hashedPassword;
-    // 🛠️ 4. Update user in MongoDB
-
-    const x = await User.findByIdAndUpdate(user._id, updateFields, {
-      new: true,
-    });
-
-    // ✅ 5. Return updated user
-    res.status(200).json({
-      message: "User updated successfully new password",
-      status: 200,
-    });
-  } catch (err) {
-    console.error("Error in patchUserImage:", err);
-    res.status(500).json({ message: "Internal server error" });
   }
 };

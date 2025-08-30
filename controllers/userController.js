@@ -10,6 +10,7 @@ import multer from "multer";
 import otpGenerator from "otp-generator";
 import VerificationOtpCode from "../models/OtpModel.js"; // Assuming User model also uses ES modules
 import axios from "axios";
+import Employers from "../models/Employers.js";
 
 // 3. Unified controller
 
@@ -162,7 +163,6 @@ export const createAdminUser = async (req, res) => {
       email,
       password: hashedPassword,
       isVerified: true,
-      role: "",
     });
     await newUser.save();
     res.status(201).json({
@@ -303,50 +303,7 @@ export const verifyEmail = async (req, res) => {
   }
 };
 
-//loginAdminUser
-export const loginAdminUser = async (req, res) => {
-  try {
-    const { email, password } = req.body;
 
-    // Find the user in the "database"
-    const user = await User.findOne({ email }); // `findOne` is typically better if you expect a single result
-
-    if (!user) {
-      return res.status(400).json({ message: "Invalid email or password" });
-    }
-
-    // Compare the password with the hashed password stored in the database
-    const isPasswordMatch = await bcrypt.compare(password, user.password);
-
-    if (!isPasswordMatch) {
-      return res.status(400).json({ message: "Not match password" });
-    }
-
-    if (!user.isVerified) {
-      return res.status(400).json({ message: "Not verified" });
-    }
-
-    if (user.role !== "administrator") {
-      if (user.role !== "employer") {
-        return res.status(400).json({ message: "Not permission" });
-      }
-    }
-
-    const userData = {
-      id: user._id,
-      role: user.role,
-    };
-
-    // Create JWT token
-    const token = jwt.sign(userData, process.env.JWT_SECRET_KEY, {
-      expiresIn: "10000000m",
-    });
-    res.status(200).json({ token });
-    // Send the token as a response
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
 
 // Login user
 export const loginUser = async (req, res) => {
@@ -443,16 +400,15 @@ export const loginViaGoogle = async (req, res) => {
 
 export const getUsers = async (req, res) => {
   try {
-    const users = await User.find({ role: { $exists: true, $ne: null } });
-    const usersData = users.map((user) => {
+    const employers = await Employers.find();
+    const employersData = employers.map((user) => {
       return {
         id: user._id,
         name: user.name,
-        role: user.role,
         image: user.image,
       };
     });
-    res.status(200).json({ status: 200, data: usersData });
+    res.status(200).json({ status: 200, data: employersData });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

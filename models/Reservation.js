@@ -24,7 +24,7 @@ const reservationSchema = new mongoose.Schema(
     },
     employer: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Employers",
     },
     customer: {
       type: String,

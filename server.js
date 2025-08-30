@@ -11,6 +11,7 @@ const serviceRoutes = require("./routes/serviceRoutes");
 const reservationRoutes = require("./routes/reservationRoutes");
 const notificationsRoutes = require("./routes/notificationRoutes");
 const timesRoutes = require("./routes/timesRoutes");
+const timeAdminRoutes = require("./routes/timeAdminRoutes");
 const { default: connectDB } = require("./connectDB");
 
 // --- Konfiguracija Express aplikacije ---
@@ -33,6 +34,7 @@ app.use("/admin/users", userAdminRoutes);
 app.use("/services", serviceRoutes);
 app.use("/reservations", reservationRoutes);
 app.use("/times", timesRoutes);
+app.use("/admin/times", timeAdminRoutes);
 app.use("/notifications", notificationsRoutes);
 
 const PORT = process.env.PORT || 3000;

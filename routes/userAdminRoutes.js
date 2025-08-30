@@ -10,6 +10,8 @@ const router = express.Router();
 // router.post('/login', usersAdminController.loginUser);
 // router.post('/logout',usersAdminController.logout);
 router.get('/', usersAdminController.getClients);
+router.get('/search', usersAdminController.findClient);
+router.get('/:id', usersAdminController.getClient);
 
 // router.put('/:id', uploadUserImage.single('image'), usersAdminController.patchUser);
 

@@ -100,7 +100,6 @@ exports.getTimes = async (req, res) => {
     } else {
       const times = await Time.find();
       const futureSlots = filterFutureTimeSlots(times,currentDateTimeStampValue,  date);
-
       res.status(200).json(futureSlots);
     }
   } catch (err) {
