@@ -5,7 +5,7 @@ const { authenticate } = require('../helpers');
 const router = express.Router();
 
 // Create a new service
-router.post('/', authenticate ,serviceController.createService);
+router.post('/', serviceController.createService);
 
 // Get all services
 router.get('/', authenticate, serviceController.getServices);
