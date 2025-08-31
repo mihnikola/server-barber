@@ -83,7 +83,7 @@ exports.getServices = async (req, res) => {
         name: item.name,
         price: item.price,
         duration: item.duration,
-        image: prettyUrlDataImage(`${process.env.API_URL}/${item.image}`),
+        image: item.image,
       };
     });
 
