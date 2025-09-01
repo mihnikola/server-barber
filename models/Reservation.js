@@ -16,7 +16,6 @@ const reservationSchema = new mongoose.Schema(
     service: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Service",
-      required: true,
     },
     user: {
       type: mongoose.Schema.Types.ObjectId,
@@ -26,8 +25,9 @@ const reservationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Employers",
     },
-    customer: {
-      type: String,
+    cancel: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Cancelations",
     },
     description: {
       type: String,
