@@ -1,5 +1,5 @@
 const Reservation = require("../models/Reservation");
-const Cancelations = require("../models/Cancelations");
+// const Cancelations = require("../models/Cancelations");
 const jwt = require("jsonwebtoken");
 const admin = require("firebase-admin");
 
@@ -54,12 +54,12 @@ exports.createReservation = async (req, res) => {
 
 
   
-    const newCancelations = new Cancelations({
-      startDate,
-      endDate,
-      description,
-      employer: employerId,
-    });
+    // const newCancelations = new Cancelations({
+    //   startDate,
+    //   endDate,
+    //   description,
+    //   employer: employerId,
+    // });
 
     const newCancellation = await newCancelations.save();
 
