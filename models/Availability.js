@@ -1,17 +1,18 @@
 const mongoose = require("mongoose");
 
-const reservationSchema = new mongoose.Schema(
+const availabilitySchema = new mongoose.Schema(
   {
-    date: {
+    startDate: {
       type: Date,
       required: true,
     },
-    time: {
-      type: String,
+    endDate: {
+      type: Date,
       required: true,
     },
-    rate: {
-      type: Object,
+    rating: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Rating",
     },
     service: {
       type: mongoose.Schema.Types.ObjectId,
@@ -25,12 +26,11 @@ const reservationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Employers",
     },
-    cancel: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Cancelations",
-    },
     description: {
       type: String,
+    },
+    type: {
+      type: Number,
     },
     status: {
       type: Number,
@@ -38,12 +38,10 @@ const reservationSchema = new mongoose.Schema(
     approved: {
       type: Number,
     },
-    //status .... default active reservation 0 or cancel reservation 2
-    //approved ... default check reservation 1 or skip reservation 0
   },
   { timestamps: true }
 );
 
-const Reservation = mongoose.model("Reservation", reservationSchema);
+const Availability = mongoose.model("Availability", availabilitySchema);
 
-module.exports = Reservation;
+module.exports = Availability;

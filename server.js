@@ -4,12 +4,10 @@ const bodyParser = require("body-parser");
 const app = express();
 
 const tokenRoutes = require('./routes/tokenRoutes');
-const reservationAdminRoutes = require('./routes/reservationAdminRoutes');
 const userRoutes = require("./routes/userRoutes");
 const userAdminRoutes = require("./routes/userAdminRoutes");
 const serviceRoutes = require("./routes/serviceRoutes");
-const reservationRoutes = require("./routes/reservationRoutes");
-const notificationsRoutes = require("./routes/notificationRoutes");
+const availabilityRoutes = require("./routes/availabilityRoutes");
 const timesRoutes = require("./routes/timesRoutes");
 const timeAdminRoutes = require("./routes/timeAdminRoutes");
 const { default: connectDB } = require("./connectDB");
@@ -29,13 +27,11 @@ app.use('/images', express.static('images')); // Za fajlove u 'images' folderu, 
 // --- Definisanje ruta ---
 app.use('/api',tokenRoutes);
 app.use("/users", userRoutes);
-app.use("/admin/reservations", reservationAdminRoutes);
 app.use("/admin/users", userAdminRoutes);
 app.use("/services", serviceRoutes);
-app.use("/reservations", reservationRoutes);
+app.use("/availabilities", availabilityRoutes);
 app.use("/times", timesRoutes);
 app.use("/admin/times", timeAdminRoutes);
-app.use("/notifications", notificationsRoutes);
 
 const PORT = process.env.PORT || 3000;
 

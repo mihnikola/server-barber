@@ -7,7 +7,7 @@ const {
   convertToDateFormat,
   filterFutureTimeSlots,
 } = require("../helpers");
-const Reservation = require("../models/Reservation");
+// const Reservation = require("../models/Reservation");
 const Time = require("../models/Time");
 const jwt = require("jsonwebtoken");
 
