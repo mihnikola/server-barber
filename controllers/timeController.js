@@ -43,6 +43,9 @@ exports.getTimes = async (req, res) => {
       },
       serviceDuration: parseInt(serviceDurationFromQuery, 10),
     };
+
+
+    
     const { date, serviceDuration, employer } = result;
 
 

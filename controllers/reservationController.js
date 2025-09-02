@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const admin = require("firebase-admin");
 const axios = require("axios");
 const { updateTimeToTenUTC } = require("../helpers");
+const Availability = require("../models/Availability");
 
 require("dotenv").config();
 
@@ -60,6 +61,60 @@ exports.createReservation = async (req, res) => {
       date: dateTimeStringValue,
       time,
       service: service_id,
+      employer: employerData,
+      user: customerId,
+      customer: customerName,
+      status,
+      rate: null,
+      approved: 1,
+      status: 0,
+      description,
+    });
+
+    await newReservation.save();
+
+    const reservationIdValue = newReservation._id;
+
+    const taskData = {
+      userId: decoded.id,
+      status: "scheduled",
+      performAt: timeStampValue,
+      token: tokenExpo.token,
+      reservationId: reservationIdValue,
+    };
+
+    sendTaskToBackend(taskData);
+    res.status(201).json(newReservation);
+  } catch (err) {
+    console.log("errorcina", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.makeReservation = async (req, res) => {
+  try {
+    // const { date, time, service_id, token, customer, employerId, description } =
+    //   req.body.params;
+      const { date, time, service, token, customer, employerId, description } =
+      req.body.params;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    const tokenExpo = await Token.findOne({ user: decoded.id });
+
+    const {serviceId, serviceDuration} = service;
+    const customerName = customer !== "" ? customer : "";
+    const customerId = customer !== "" ? null : tokenExpo.user;
+    const employerData = employerId === "" ? decoded.id : employerId;
+    const status = customer !== "" ? 1 : 0;
+    const timeStampValue = convertToTimeStamp(date?.dateString || date, time);
+    const dateTimeStringValue = updateTimeToTenUTC(
+      date?.dateString || date,
+      time
+    );
+
+    const newReservation = new Availability({
+      startDate: dateTimeStringValue,
+      time,
+      service: serviceId,
       employer: employerData,
       user: customerId,
       customer: customerName,

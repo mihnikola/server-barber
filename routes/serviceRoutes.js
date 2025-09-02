@@ -11,6 +11,7 @@ router.post('/', serviceController.createService);
 router.get('/', authenticate, serviceController.getServices);
 router.put('/:id', authenticate, serviceController.putService);
 router.delete('/:id', authenticate, serviceController.deleteService);
-router.get('/client',serviceController.getServices)
+router.get('/client',serviceController.getServices);
+
 
 module.exports = router;

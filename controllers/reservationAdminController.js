@@ -47,13 +47,10 @@ exports.getReservations = async (req, res) => {
 //create reservation by admin
 exports.createReservation = async (req, res) => {
   try {
-
-    const { startDate, endDate,time, token, description } = req.body;
+    const { startDate, endDate, time, token, description } = req.body;
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     const employerId = decoded.id;
 
-
-  
     // const newCancelations = new Cancelations({
     //   startDate,
     //   endDate,
