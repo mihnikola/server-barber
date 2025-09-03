@@ -8,6 +8,7 @@ const userRoutes = require("./routes/userRoutes");
 const userAdminRoutes = require("./routes/userAdminRoutes");
 const serviceRoutes = require("./routes/serviceRoutes");
 const availabilityRoutes = require("./routes/availabilityRoutes");
+const availabilityAdminRoutes = require("./routes/availabilityAdminRoutes");
 const timesRoutes = require("./routes/timesRoutes");
 const timeAdminRoutes = require("./routes/timeAdminRoutes");
 const { default: connectDB } = require("./connectDB");
@@ -30,6 +31,7 @@ app.use("/users", userRoutes);
 app.use("/admin/users", userAdminRoutes);
 app.use("/services", serviceRoutes);
 app.use("/availabilities", availabilityRoutes);
+app.use("/admin/availabilities", availabilityAdminRoutes);
 app.use("/times", timesRoutes);
 app.use("/admin/times", timeAdminRoutes);
 
