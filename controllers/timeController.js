@@ -1,26 +1,14 @@
 const {
-  timeToParameters,
-  addMinutesToTime,
-  getTimeValues,
-  convertWithChooseService,
-  getDateRange,
-  convertToDateFormat,
-  filterFutureTimeSlots,
+  getFreeTimes,
+  getFreeTimesUnavailability,
+  getReservationsForDate,
+  reservationForSameDate,
 } = require("../helpers");
-const Reservation = require("../models/Reservation");
+const Availability = require("../models/Availability");
 const Time = require("../models/Time");
 const jwt = require("jsonwebtoken");
 
-exports.createTime = async (req, res) => {
-  try {
-    const { value } = req.body;
-    const newTime = new Time({ value });
-    await newTime.save();
-    res.status(201).json(newTime);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+
 
 exports.getTimes = async (req, res) => {
   const token = req.header("Authorization")
@@ -29,83 +17,68 @@ exports.getTimes = async (req, res) => {
     ? req.body.headers.Authorization
     : req.get("authorization");
   if (!token) return res.status(403).send("Access denied");
+  let decoded = null;
+
+  if (token) {
+    decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+  }
 
   try {
-    const dateFromQuery = req.query.date;
-    const currentDateTimeStampValue = req.query.dateTimeStampValue;
-    const employerIdFromQuery = req.query["employer[id]"];
-    const serviceDurationFromQuery = req.query["service[duration]"];
+    const timesData = await Time.find();
 
     const result = {
-      date: dateFromQuery,
+      date: req.query.date,
       employer: {
-        id: employerIdFromQuery,
+        id: req.query["employer[id]"],
       },
-      serviceDuration: parseInt(serviceDurationFromQuery, 10),
+      serviceDuration: parseInt(req.query["service[duration]"], 10),
     };
 
-
-    
-    const { date, serviceDuration, employer } = result;
-
-
-    let decoded = null;
-    if (token) {
-      decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    }
+    const { date: selectedDate, serviceDuration, employer } = result;
+    const start = new Date(selectedDate);
     const emplId = employer ? employer.id : decoded.id;
-    const { start, end } = getDateRange(convertToDateFormat(date));
+    const rangeStart = new Date(selectedDate + "T00:00:00.000Z").toISOString();
+    const rangeEnd = new Date(selectedDate + "T23:00:00.000Z").toISOString();
 
-    const reservation = await Reservation.find({
-      status: { $nin: [2] },
+    const reservationsData = await Availability.find({
+      status: { $nin: [1] },
       employer: emplId,
-      date: { $gte: start, $lt: end },
-    }).populate("service", "duration"); // This will populate only the 'duration' field from the Service model
+      type: 0,
+      startDate: { $gte: start },
+    }).populate("service", "duration");
 
-    if (reservation.length > 0) {
-      const times = timeToParameters(reservation);
-      const result = times.map(([hours, minutes]) => {
-        const reservationForTime = reservation.find((res) => {
-          const [resHours, resMinutes] = res.time.split(":").map(Number);
-          return resHours === hours && resMinutes === minutes;
-        });
-        return {
-          hours,
-          minutes,
-          duration: reservationForTime
-            ? reservationForTime.service?.duration - 10
-            : null,
-        };
-      });
+    const reservationsUnavailability = await Availability.find({
+      status: { $nin: [1] },
+      employer: emplId,
+      type: 1,
+      startDate: { $lt: rangeEnd },
+      endDate: { $gt: rangeStart },
+    });
 
-      const time = result.map((item) => {
-        return addMinutesToTime(item.hours, item.minutes, item.duration);
-      });
-      const reservationValueTimesData = reservation.map((item) => {
-        return convertWithChooseService(item.time, serviceDuration - 10);
-      });
-      const timeRanges = reservationValueTimesData.map((item, index) => {
-        const timeValue = time[index].split(":").map(Number);
-        const resultTime = `${timeValue[0] < 10 ? "0" : ""}${timeValue[0]}:${
-          timeValue[1]
-        }`;
-        return {
-          start: item,
-          // end: time[index], //mora 09:50 a ne 9:50
-          end: resultTime,
-        };
-      });
+    if (reservationsUnavailability.length > 0) {
+      const reservationCheck = reservationForSameDate(reservationsUnavailability,rangeStart,rangeEnd);
+      if (reservationCheck === 0) {return res.status(200).json([]);}
+      const freeTimes = getFreeTimesUnavailability(timesData,reservationsUnavailability,serviceDuration,reservationCheck);
+      const freeTimesData = getFreeTimes(freeTimes,reservationsData,selectedDate);
+      return res.status(200).json(freeTimesData);
+    }
 
-      getTimeValues(timeRanges).then((result) => {
-        const futureSlots = filterFutureTimeSlots(result, currentDateTimeStampValue, date);
-        res.status(200).json(futureSlots);
-      });
+    if (reservationsData.length > 0) {
+      const reservationsForSelectedDate = getReservationsForDate(
+        reservationsData,
+        selectedDate
+      );
+
+      const freeTimes = getFreeTimes(
+        timesData,
+        reservationsForSelectedDate,
+        selectedDate
+      );
+      return res.status(200).json(freeTimes);
     } else {
-      const times = await Time.find();
-      const futureSlots = filterFutureTimeSlots(times,currentDateTimeStampValue,  date);
-      res.status(200).json(futureSlots);
+      return res.status(200).json(timesData);
     }
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 };
