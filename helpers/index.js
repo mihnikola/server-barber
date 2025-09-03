@@ -1,3 +1,4 @@
+const { default: axios } = require("axios");
 const Time = require("../models/Time");
 const jwt = require("jsonwebtoken");
 // Import Firestore Timestamp if you're working with Firebase SDK
@@ -21,6 +22,24 @@ function base64ToUriFunc(base64String) {
   // Return the stream object
   return stream;
 }
+const sendTaskToBackend = async (taskData) => {
+  const functionUrl =
+    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/addTaskToFirestore";
+  await axios
+    .post(functionUrl, { taskData })
+    .then((res) => {
+      console.log("solve", res.data.message);
+    })
+    .catch((err) => {
+      console.log("err", err);
+    });
+};
+const convertToEndDateValue = (date, duration) => {
+  const d = new Date(date);
+  d.setMinutes(d.getMinutes() + duration);
+
+  return d.toISOString();
+};
 
 const prettyUrlDataImage = (data) => {
   return data.replace("\\", "/");
@@ -108,13 +127,10 @@ const convertToDateFormat = (dateStr) => {
 
 const getDateRange = (dateString) => {
   const start = new Date(dateString + "T00:00:00.000Z");
-  const end = new Date(start);
-  end.setUTCDate(end.getUTCDate() + 1);
-  return { start, end };
+  return { start };
 };
 
 const filterFutureTimeSlots = (timeSlots, currentTime, dateValue) => {
- 
   const date1 = currentTime.split("T")[0];
   const date2 = dateValue.split("T")[0];
 
@@ -143,7 +159,90 @@ const filterFutureTimeSlots = (timeSlots, currentTime, dateValue) => {
     }
   });
 };
+const getReservationsForDate = (reservations, date) => {
+  return reservations.filter((res) => {
+    if (!res.startDate) return false;
+    const resDate = new Date(res.startDate).toISOString().split("T")[0];
+    return resDate === date;
+  });
+};
+// Define a function to get the free time slots
+const getFreeTimes = (allTimes, reservations, selectedDate) => {
+  // First, we create an array of time slots that are unavailable based on the reservations
+  const unavailableTimes = [];
+  reservations.forEach((res) => {
+    const start = new Date(res.startDate);
+    const end = new Date(res.endDate);
+    const duration = res.service.duration;
 
+    // Iterate through the time slots to mark all affected slots as unavailable
+    for (const time of allTimes) {
+      const timeDate = new Date(`${selectedDate}T${time.value}:00.000Z`);
+      const timeWithService = new Date(timeDate);
+      timeWithService.setMinutes(timeWithService.getMinutes() + duration);
+
+      // Check if the time slot falls within a reservation period
+      if (
+        (timeDate >= start && timeDate < end) ||
+        (timeWithService > start && timeWithService <= end) ||
+        (start >= timeDate && start < timeWithService)
+      ) {
+        unavailableTimes.push(time.value);
+      }
+    }
+  });
+
+  // Now, filter the original timesData to keep only the free slots
+  const freeTimes = allTimes.filter(
+    (time) => !unavailableTimes.includes(time.value)
+  );
+  return freeTimes;
+};
+const reservationForSameDate = (
+  reservationsUnavailability,
+  rangeStart,
+  rangeEnd
+) => {
+  const selectedDateStart = rangeStart.split("T")[0];
+  const selectedDateEnd = rangeEnd.split("T")[0];
+  for (const item of reservationsUnavailability) {
+    const startDateStr = new Date(item.startDate).toISOString().split("T")[0];
+    const endDateStr = new Date(item.endDate).toISOString().split("T")[0];
+
+    if (selectedDateStart === startDateStr) {
+      return 1;
+    }
+    if (selectedDateEnd === endDateStr) {
+      return 2;
+    }
+    return 0;
+  }
+};
+const getFreeTimesUnavailability = (
+  allTimes,
+  reservationItem,
+  duration,
+  checkDate
+) => {
+  let timeValue='';
+  if (checkDate === 1) {
+    const durationNew = duration - 10;
+
+    const timeOnly = reservationItem[0].startDate;
+    const newDate = new Date(timeOnly.getTime() - durationNew * 60 * 1000);
+    const timeOnlyValue = newDate.toISOString().split("T")[1];
+    timeValue = timeOnlyValue.substring(0, 5);
+  }
+  if (checkDate === 2) {
+    const timeOnly = reservationItem[0].endDate;
+    const newDate = new Date(timeOnly.getTime());
+    const timeOnlyValue = newDate.toISOString().split("T")[1];
+    timeValue = timeOnlyValue.substring(0, 5);
+  }
+  return allTimes.filter((item) =>
+    checkDate === 2 ? item.value >= timeValue : item.value < timeValue
+  );
+};
 function updateTimeToTenUTC(dateString, timeString) {
   const datePart = dateString.substring(0, 10);
   const desiredUTCTime = `${timeString}:00.000+00:00`;
@@ -151,8 +250,14 @@ function updateTimeToTenUTC(dateString, timeString) {
   return newUTCDateString;
 }
 
-function convertToISO8601(dateInput) {
+function convertToEndDate(dateString, timeString) {
+  const datePart = dateString.substring(0, 10);
+  const desiredUTCTime = `${timeString}:00.000+00:00`;
+  const newUTCDateString = `${datePart}T${desiredUTCTime}`;
+  return newUTCDateString;
+}
 
+function convertToISO8601(dateInput) {
   // Helper function to parse DD/MM/YYYY, HH:mm:ss format
   function parseSlashSeparatedDateTime(inputString) {
     const match = inputString.match(
@@ -277,65 +382,6 @@ function convertToISO8601(dateInput) {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 module.exports = {
   updateTimeToTenUTC,
   convertToDateFormat,
@@ -350,4 +396,10 @@ module.exports = {
   prettyUrlDataImage,
   convertToTimeStamp,
   filterFutureTimeSlots,
+  getFreeTimes,
+  convertToEndDateValue,
+  sendTaskToBackend,
+  getFreeTimesUnavailability,
+  getReservationsForDate,
+  reservationForSameDate
 };

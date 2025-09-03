@@ -1,252 +1,255 @@
-const { prettyUrlDataImage, convertToTimeStamp } = require("../helpers/utils");
-const Reservation = require("../models/Reservation");
-const Token = require("../models/Token");
-const jwt = require("jsonwebtoken");
-const admin = require("firebase-admin");
-const axios = require("axios");
-const { updateTimeToTenUTC } = require("../helpers");
-const Availability = require("../models/Availability");
+// const { prettyUrlDataImage, convertToTimeStamp } = require("../helpers/utils");
+// // const Reservation = require("../models/Reservation");
+// const Token = require("../models/Token");
+// const jwt = require("jsonwebtoken");
+// const admin = require("firebase-admin");
+// const axios = require("axios");
+// const { updateTimeToTenUTC } = require("../helpers");
+// const Availability = require("../models/Availability");
 
-require("dotenv").config();
+// require("dotenv").config();
 
-if (!admin.apps.length) {
-  const serviceAccount = require("../helpers/barber-demo-218de-firebase-adminsdk-fbsvc-0f43d447e4.json");
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
-}
-async function deleteAppointment(reservationId) {
-  const functionUrl =
-    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/deleteAppointment";
-  await axios
-    .post(functionUrl, { reservationId })
-    .then((res) => {
-      console.log("solve", res.data.message);
-    })
-    .catch((err) => {
-      console.log("err", err);
-    });
-}
-async function sendTaskToBackend(taskData) {
-  const functionUrl =
-    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/addTaskToFirestore";
-  await axios
-    .post(functionUrl, { taskData })
-    .then((res) => {
-      console.log("solve", res.data.message);
-    })
-    .catch((err) => {
-      console.log("err", err);
-    });
-}
+// if (!admin.apps.length) {
+//   const serviceAccount = require("../helpers/barber-demo-218de-firebase-adminsdk-fbsvc-0f43d447e4.json");
+//   admin.initializeApp({
+//     credential: admin.credential.cert(serviceAccount),
+//   });
+// }
+// async function deleteAppointment(reservationId) {
+//   const functionUrl =
+//     "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/deleteAppointment";
+//   await axios
+//     .post(functionUrl, { reservationId })
+//     .then((res) => {
+//       console.log("solve", res.data.message);
+//     })
+//     .catch((err) => {
+//       console.log("err", err);
+//     });
+// }
+// async function sendTaskToBackend(taskData) {
+//   const functionUrl =
+//     "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/addTaskToFirestore";
+//   await axios
+//     .post(functionUrl, { taskData })
+//     .then((res) => {
+//       console.log("solve", res.data.message);
+//     })
+//     .catch((err) => {
+//       console.log("err", err);
+//     });
+// }
 
-exports.createReservation = async (req, res) => {
-  try {
-    const { date, time, service_id, token, customer, employerId, description } =
-      req.body.params;
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    const tokenExpo = await Token.findOne({ user: decoded.id });
+// exports.createReservation = async (req, res) => {
+//   try {
+//     const { date, time, service_id, token, customer, employerId, description } =
+//       req.body.params;
 
-    const customerName = customer !== "" ? customer : "";
-    const customerId = customer !== "" ? null : tokenExpo.user;
-    const employerData = employerId === "" ? decoded.id : employerId;
-    const status = customer !== "" ? 1 : 0;
-    const timeStampValue = convertToTimeStamp(date?.dateString || date, time);
-    const dateTimeStringValue = updateTimeToTenUTC(
-      date?.dateString || date,
-      time
-    );
+    
 
-    const newReservation = new Reservation({
-      date: dateTimeStringValue,
-      time,
-      service: service_id,
-      employer: employerData,
-      user: customerId,
-      customer: customerName,
-      status,
-      rate: null,
-      approved: 1,
-      status: 0,
-      description,
-    });
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+//     const tokenExpo = await Token.findOne({ user: decoded.id });
 
-    await newReservation.save();
+//     const customerName = customer !== "" ? customer : "";
+//     const customerId = customer !== "" ? null : tokenExpo.user;
+//     const employerData = employerId === "" ? decoded.id : employerId;
+//     const status = customer !== "" ? 1 : 0;
+//     const timeStampValue = convertToTimeStamp(date?.dateString || date, time);
+//     const dateTimeStringValue = updateTimeToTenUTC(
+//       date?.dateString || date,
+//       time
+//     );
 
-    const reservationIdValue = newReservation._id;
+//     const newReservation = new Reservation({
+//       date: dateTimeStringValue,
+//       time,
+//       service: service_id,
+//       employer: employerData,
+//       user: customerId,
+//       customer: customerName,
+//       status,
+//       rate: null,
+//       approved: 1,
+//       status: 0,
+//       description,
+//     });
 
-    const taskData = {
-      userId: decoded.id,
-      status: "scheduled",
-      performAt: timeStampValue,
-      token: tokenExpo.token,
-      reservationId: reservationIdValue,
-    };
+//     await newReservation.save();
 
-    sendTaskToBackend(taskData);
-    res.status(201).json(newReservation);
-  } catch (err) {
-    console.log("errorcina", err);
-    res.status(500).json({ error: err.message });
-  }
-};
+//     const reservationIdValue = newReservation._id;
 
-exports.makeReservation = async (req, res) => {
-  try {
-    // const { date, time, service_id, token, customer, employerId, description } =
-    //   req.body.params;
-      const { date, time, service, token, customer, employerId, description } =
-      req.body.params;
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    const tokenExpo = await Token.findOne({ user: decoded.id });
+//     const taskData = {
+//       userId: decoded.id,
+//       status: "scheduled",
+//       performAt: timeStampValue,
+//       token: tokenExpo.token,
+//       reservationId: reservationIdValue,
+//     };
 
-    const {serviceId, serviceDuration} = service;
-    const customerName = customer !== "" ? customer : "";
-    const customerId = customer !== "" ? null : tokenExpo.user;
-    const employerData = employerId === "" ? decoded.id : employerId;
-    const status = customer !== "" ? 1 : 0;
-    const timeStampValue = convertToTimeStamp(date?.dateString || date, time);
-    const dateTimeStringValue = updateTimeToTenUTC(
-      date?.dateString || date,
-      time
-    );
+//     sendTaskToBackend(taskData);
+//     res.status(201).json(newReservation);
+//   } catch (err) {
+//     console.log("errorcina", err);
+//     res.status(500).json({ error: err.message });
+//   }
+// };
 
-    const newReservation = new Availability({
-      startDate: dateTimeStringValue,
-      time,
-      service: serviceId,
-      employer: employerData,
-      user: customerId,
-      customer: customerName,
-      status,
-      rate: null,
-      approved: 1,
-      status: 0,
-      description,
-    });
+// exports.makeReservation = async (req, res) => {
+//   try {
+//     // const { date, time, service_id, token, customer, employerId, description } =
+//     //   req.body.params;
+//     const { date, time, service, token, customer, employerId, description } =
+//       req.body.params;
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+//     const tokenExpo = await Token.findOne({ user: decoded.id });
 
-    await newReservation.save();
+//     const { serviceId, serviceDuration } = service;
+//     const customerName = customer !== "" ? customer : "";
+//     const customerId = customer !== "" ? null : tokenExpo.user;
+//     const employerData = employerId === "" ? decoded.id : employerId;
+//     const status = customer !== "" ? 1 : 0;
+//     const timeStampValue = convertToTimeStamp(date?.dateString || date, time);
+//     const dateTimeStringValue = updateTimeToTenUTC(
+//       date?.dateString || date,
+//       time
+//     );
 
-    const reservationIdValue = newReservation._id;
+//     const newReservation = new Availability({
+//       startDate: dateTimeStringValue,
+//       time,
+//       service: serviceId,
+//       employer: employerData,
+//       user: customerId,
+//       customer: customerName,
+//       status,
+//       rate: null,
+//       approved: 1,
+//       status: 0,
+//       description,
+//     });
 
-    const taskData = {
-      userId: decoded.id,
-      status: "scheduled",
-      performAt: timeStampValue,
-      token: tokenExpo.token,
-      reservationId: reservationIdValue,
-    };
+//     await newReservation.save();
 
-    sendTaskToBackend(taskData);
-    res.status(201).json(newReservation);
-  } catch (err) {
-    console.log("errorcina", err);
-    res.status(500).json({ error: err.message });
-  }
-};
+//     const reservationIdValue = newReservation._id;
 
-// Get all reservations
-exports.getReservations = async (req, res) => {
-  const token = req.header("Authorization")
-    ? req.header("Authorization").split(" ")[1]
-    : req.body.headers.Authorization
-    ? req.body.headers.Authorization
-    : req.get("authorization");
-  if (!token) return res.status(403).send("Access denied");
+//     const taskData = {
+//       userId: decoded.id,
+//       status: "scheduled",
+//       performAt: timeStampValue,
+//       token: tokenExpo.token,
+//       reservationId: reservationIdValue,
+//     };
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+//     sendTaskToBackend(taskData);
+//     res.status(201).json(newReservation);
+//   } catch (err) {
+//     console.log("errorcina", err);
+//     res.status(500).json({ error: err.message });
+//   }
+// };
 
-    const customerId = decoded.id;
+// // Get all reservations
+// exports.getReservations = async (req, res) => {
+//   const token = req.header("Authorization")
+//     ? req.header("Authorization").split(" ")[1]
+//     : req.body.headers.Authorization
+//     ? req.body.headers.Authorization
+//     : req.get("authorization");
+//   if (!token) return res.status(403).send("Access denied");
 
-    const reservations = await Reservation.find({
-      user: customerId,
-      status: { $nin: [2] },
-    })
-      .sort({ date: 1 })
-      .populate("service")
-      .populate("employer");
-    res.status(200).json(reservations);
-  } catch (err) {
-    console.log("errorcina", err);
-    res.status(500).json({ error: err.message });
-  }
-};
+//   try {
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
-exports.patchReservationById = async (req, res) => {
-  const token = req.header("Authorization")
-    ? req.header("Authorization").split(" ")[1]
-    : req.body.headers.Authorization
-    ? req.body.headers.Authorization
-    : req.get("authorization");
-  if (!token) return res.status(403).send("Access denied");
+//     const customerId = decoded.id;
 
-  try {
-    const { id } = req.params;
-    const { status, rate } = req.body;
+//     const reservations = await Reservation.find({
+//       user: customerId,
+//       status: { $nin: [2] },
+//     })
+//       .sort({ date: 1 })
+//       .populate("service")
+//       .populate("employer");
+//     res.status(200).json(reservations);
+//   } catch (err) {
+//     console.log("errorcina", err);
+//     res.status(500).json({ error: err.message });
+//   }
+// };
 
-    let reservation = null;
-    if (status === 0) {
-      reservation = await Reservation.findByIdAndUpdate(
-        id,
-        { rate },
-        { new: true }
-      );
-    } else {
-      reservation = await Reservation.findByIdAndUpdate(
-        id,
-        { status: 2 },
-        { new: true }
-      );
-    }
+// exports.patchReservationById = async (req, res) => {
+//   const token = req.header("Authorization")
+//     ? req.header("Authorization").split(" ")[1]
+//     : req.body.headers.Authorization
+//     ? req.body.headers.Authorization
+//     : req.get("authorization");
+//   if (!token) return res.status(403).send("Access denied");
 
-    if (!reservation) {
-      return res.status(404).send("Reservation not found");
-    }
-    if (status === 0) {
-      res.status(200).json({ message: "Reservation is rated successfully" });
-    } else {
-      deleteAppointment(reservation._id);
-      res
-        .status(200)
-        .json({ message: "Reservation is cancelled successfully" });
-    }
-  } catch (error) {
-    res.status(500).send("Server Error");
-  }
-};
+//   try {
+//     const { id } = req.params;
+//     const { status, rate } = req.body;
 
-exports.getReservationById = async (req, res) => {
-  const { id } = req.params;
+//     let reservation = null;
+//     if (status === 0) {
+//       reservation = await Reservation.findByIdAndUpdate(
+//         id,
+//         { rate },
+//         { new: true }
+//       );
+//     } else {
+//       reservation = await Reservation.findByIdAndUpdate(
+//         id,
+//         { status: 2 },
+//         { new: true }
+//       );
+//     }
 
-  try {
-    const reservationItem = await Reservation.findOne({ _id: id })
-      .populate({
-        path: "service",
-        select: "id name duration price image",
-        transform: (doc) => {
-          if (doc.image) {
-            // Assuming the image field stores the relative path
-            doc.image = prettyUrlDataImage(
-              `${process.env.API_URL}/${doc.image}`
-            );
-          }
-          return doc;
-        },
-      })
-      .populate({
-        path: "employer",
-        select: "id name image",
-        transform: (doc) => {
-          if (doc.image) {
-            // Assuming the image field stores the relative path
-            doc.image = doc.image;
-          }
-          return doc;
-        },
-      });
-    res.status(200).json(reservationItem);
-  } catch (error) {
-    res.status(500).json({ error: err.message });
-  }
-};
+//     if (!reservation) {
+//       return res.status(404).send("Reservation not found");
+//     }
+//     if (status === 0) {
+//       res.status(200).json({ message: "Reservation is rated successfully" });
+//     } else {
+//       deleteAppointment(reservation._id);
+//       res
+//         .status(200)
+//         .json({ message: "Reservation is cancelled successfully" });
+//     }
+//   } catch (error) {
+//     res.status(500).send("Server Error");
+//   }
+// };
+
+// exports.getReservationById = async (req, res) => {
+//   const { id } = req.params;
+
+//   try {
+//     const reservationItem = await Reservation.findOne({ _id: id })
+//       .populate({
+//         path: "service",
+//         select: "id name duration price image",
+//         transform: (doc) => {
+//           if (doc.image) {
+//             // Assuming the image field stores the relative path
+//             doc.image = prettyUrlDataImage(
+//               `${process.env.API_URL}/${doc.image}`
+//             );
+//           }
+//           return doc;
+//         },
+//       })
+//       .populate({
+//         path: "employer",
+//         select: "id name image",
+//         transform: (doc) => {
+//           if (doc.image) {
+//             // Assuming the image field stores the relative path
+//             doc.image = doc.image;
+//           }
+//           return doc;
+//         },
+//       });
+//     res.status(200).json(reservationItem);
+//   } catch (error) {
+//     res.status(500).json({ error: err.message });
+//   }
+// };
