@@ -220,30 +220,16 @@ const reservationForSameDate = (
     return 0;
   }
 };
-const getFreeTimesUnavailability = (
-  allTimes,
-  reservationItem,
-  duration,
-  checkDate
-) => {
+const getFreeTimesUnavailability = (allTimes, reservationItem, duration) => {
   let timeValue = "";
-  if (checkDate === 1) {
-    const durationNew = duration - 10;
+  const durationNew = duration - 10;
 
-    const timeOnly = reservationItem[0].startDate;
-    const newDate = new Date(timeOnly.getTime() - durationNew * 60 * 1000);
-    const timeOnlyValue = newDate.toISOString().split("T")[1];
-    timeValue = timeOnlyValue.substring(0, 5);
-  }
-  if (checkDate === 2) {
-    const timeOnly = reservationItem[0].endDate;
-    const newDate = new Date(timeOnly.getTime());
-    const timeOnlyValue = newDate.toISOString().split("T")[1];
-    timeValue = timeOnlyValue.substring(0, 5);
-  }
-  return allTimes.filter((item) =>
-    checkDate === 2 ? item.value >= timeValue : item.value < timeValue
-  );
+  const timeOnly = reservationItem[0].startDate;
+  const newDate = new Date(timeOnly.getTime() - durationNew * 60 * 1000);
+  const timeOnlyValue = newDate.toISOString().split("T")[1];
+  timeValue = timeOnlyValue.substring(0, 5);
+
+  return allTimes.filter((item) => item.value >= timeValue);
 };
 function updateTimeToTenUTC(dateString, timeString) {
   const datePart = dateString.substring(0, 10);
