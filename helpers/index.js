@@ -28,16 +28,18 @@ const sendTaskToBackend = async (taskData) => {
   await axios
     .post(functionUrl, { taskData })
     .then((res) => {
-      console.log("solve", res.data.message);
+      return res;
     })
     .catch((err) => {
-      console.log("err", err);
+      return err;
     });
 };
-const convertToEndDateValue = (date, duration) => {
+const convertToEndDateValue = (date, value) => {
+  console.log("date, duration", date, value);
   const d = new Date(date);
-  d.setMinutes(d.getMinutes() + duration);
+  d.setMinutes(d.getMinutes() + value);
 
+  console.log("xxxxxxxxxxxxxx", d.toISOString());
   return d.toISOString();
 };
 
@@ -224,7 +226,7 @@ const getFreeTimesUnavailability = (
   duration,
   checkDate
 ) => {
-  let timeValue='';
+  let timeValue = "";
   if (checkDate === 1) {
     const durationNew = duration - 10;
 
@@ -247,6 +249,7 @@ function updateTimeToTenUTC(dateString, timeString) {
   const datePart = dateString.substring(0, 10);
   const desiredUTCTime = `${timeString}:00.000+00:00`;
   const newUTCDateString = `${datePart}T${desiredUTCTime}`;
+  console.log("newUTCDateString", newUTCDateString);
   return newUTCDateString;
 }
 
@@ -401,5 +404,5 @@ module.exports = {
   sendTaskToBackend,
   getFreeTimesUnavailability,
   getReservationsForDate,
-  reservationForSameDate
+  reservationForSameDate,
 };
