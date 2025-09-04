@@ -1,8 +1,8 @@
+const { default: axios } = require("axios");
 const {
   updateTimeToTenUTC,
   convertToTimeStamp,
   convertToEndDateValue,
-  sendTaskToBackend
 } = require("../helpers");
 const Availability = require("../models/Availability");
 const Token = require("../models/Token");
@@ -21,8 +21,6 @@ exports.getAvailabilities = async (req, res) => {
     // const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
     const availabilitiesData = await Availability.find();
-
-  
 
     res.status(200).json(availabilitiesData);
   } catch (err) {
@@ -61,7 +59,6 @@ exports.patchAvailability = async (req, res) => {
   }
 };
 
-
 exports.createAvailability = async (req, res) => {
   try {
     const { date, time, service, token, customer, employerId, description } =
@@ -71,7 +68,6 @@ exports.createAvailability = async (req, res) => {
 
     const tokenExpo = await Token.findOne({ user: decoded.id });
     const { serviceId, serviceDuration } = service;
-
     const customerId = customer !== "" ? null : tokenExpo.user;
     const employer = employerId === "" ? decoded.id : employerId;
 
@@ -104,10 +100,21 @@ exports.createAvailability = async (req, res) => {
       reservationId: newAvailabilityIdValue,
     };
 
-    sendTaskToBackend(taskData);
-    res.status(201).json(newAvailability);
+    const functionUrl = "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/addTaskToFirestore";
+    
+    await axios
+      .post(functionUrl, { taskData })
+      .then(() => {
+        return res.status(201).json({status: 201, data: newAvailability});
+      })
+      .catch((err) => { 
+        console.log("sendDataToFirebase",err);
+        if (err.errno < 0) {
+          return res.status(500).json({ error: "Something went wrong" });
+        }
+      });
   } catch (err) {
     console.log("errorcina", err);
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 };

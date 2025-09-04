@@ -24,7 +24,7 @@ exports.getTimes = async (req, res) => {
   }
 
   try {
-    const timesData = await Time.find();
+    const timesData = await Time.find().sort({value: 1});
 
     const result = {
       date: req.query.date,
@@ -55,7 +55,11 @@ exports.getTimes = async (req, res) => {
       endDate: { $gt: rangeStart },
     });
 
+    console.log("reservationsUnavailability",reservationsUnavailability)
+    console.log("reservationsData",reservationsData)
+
     if (reservationsUnavailability.length > 0) {
+      console.log("prvi")
       const reservationCheck = reservationForSameDate(reservationsUnavailability,rangeStart,rangeEnd);
       if (reservationCheck === 0) {return res.status(200).json([]);}
       const freeTimes = getFreeTimesUnavailability(timesData,reservationsUnavailability,serviceDuration,reservationCheck);
@@ -64,6 +68,8 @@ exports.getTimes = async (req, res) => {
     }
 
     if (reservationsData.length > 0) {
+      console.log("drugi")
+
       const reservationsForSelectedDate = getReservationsForDate(
         reservationsData,
         selectedDate
@@ -76,6 +82,8 @@ exports.getTimes = async (req, res) => {
       );
       return res.status(200).json(freeTimes);
     } else {
+      console.log("treci",timesData)
+
       return res.status(200).json(timesData);
     }
   } catch (err) {
