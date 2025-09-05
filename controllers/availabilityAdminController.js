@@ -1,11 +1,5 @@
-const {
-  updateTimeToTenUTC,
-  convertToTimeStamp,
-  convertToEndDateValue,
-  sendTaskToBackend,
-} = require("../helpers");
+
 const Availability = require("../models/Availability");
-const Token = require("../models/Token");
 const jwt = require("jsonwebtoken");
 
 // Get all notifications

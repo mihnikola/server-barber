@@ -1,15 +1,40 @@
 const {
   getFreeTimes,
   getFreeTimesUnavailability,
-  getReservationsForDate,
   reservationForSameDate,
 } = require("../helpers");
 const Availability = require("../models/Availability");
 const Time = require("../models/Time");
 const jwt = require("jsonwebtoken");
 
+function isSlotAvailable(startTimeStr, serviceDuration, reservations, date) {
+  const start = new Date(`${date}T${startTimeStr}:00.000Z`);
+  const end = new Date(start.getTime() + serviceDuration * 60000);
 
+  return !reservations.some((res) => {
+    const resStart = new Date(res.startDate);
+    const resEnd = new Date(res.endDate);
+    return start < resEnd && end > resStart;
+  });
+}
 
+function getAvailableStartTimes(
+  timesData,
+  reservations,
+  serviceDuration,
+  date
+) {
+  const available = [];
+
+  for (const timeObj of timesData) {
+    const time = timeObj.value;
+    if (isSlotAvailable(time, serviceDuration, reservations, date)) {
+      available.push(timeObj); // keep full object if needed
+    }
+  }
+
+  return available;
+}
 exports.getTimes = async (req, res) => {
   const token = req.header("Authorization")
     ? req.header("Authorization").split(" ")[1]
@@ -24,7 +49,7 @@ exports.getTimes = async (req, res) => {
   }
 
   try {
-    const timesData = await Time.find().sort({value: 1});
+    const timesData = await Time.find().sort({ value: 1 });
 
     const result = {
       date: req.query.date,
@@ -47,6 +72,7 @@ exports.getTimes = async (req, res) => {
       startDate: { $gte: start },
     }).populate("service", "duration");
 
+
     const reservationsUnavailability = await Availability.find({
       status: { $nin: [1] },
       employer: emplId,
@@ -55,35 +81,47 @@ exports.getTimes = async (req, res) => {
       endDate: { $gt: rangeStart },
     });
 
-    console.log("reservationsUnavailability",reservationsUnavailability)
-    console.log("reservationsData",reservationsData)
-
     if (reservationsUnavailability.length > 0) {
-      console.log("prvi")
-      const reservationCheck = reservationForSameDate(reservationsUnavailability,rangeStart,rangeEnd);
-      if (reservationCheck === 0) {return res.status(200).json([]);}
-      const freeTimes = getFreeTimesUnavailability(timesData,reservationsUnavailability,serviceDuration,reservationCheck);
-      const freeTimesData = getFreeTimes(freeTimes,reservationsData,selectedDate);
+      const reservationCheck = reservationForSameDate(
+        reservationsUnavailability,
+        rangeStart,
+        rangeEnd
+      );
+      if (reservationCheck === 0) {
+        return res.status(200).json([]);
+      }
+
+      const freeTimes = getFreeTimesUnavailability(
+        timesData,
+        reservationsUnavailability,
+        serviceDuration,
+        reservationCheck
+      );
+
+      console.log("nakon odsustva",freeTimes);
+      
+      const freeTimesData = getFreeTimes(
+        freeTimes,
+        reservationsData,
+        selectedDate
+      );
       return res.status(200).json(freeTimesData);
     }
 
     if (reservationsData.length > 0) {
-      console.log("drugi")
 
-      const reservationsForSelectedDate = getReservationsForDate(
-        reservationsData,
-        selectedDate
-      );
+      console.log("QWert",reservationsData);
 
-      const freeTimes = getFreeTimes(
+      const freeTimes = getAvailableStartTimes(
         timesData,
-        reservationsForSelectedDate,
+        reservationsData,
+        serviceDuration,
         selectedDate
       );
+
+
       return res.status(200).json(freeTimes);
     } else {
-      console.log("treci",timesData)
-
       return res.status(200).json(timesData);
     }
   } catch (err) {
