@@ -255,46 +255,16 @@ const reservationForSameDate = (
     return 0;
   }
 };
-const getFreeTimesUnavailability = (
-  allTimes,
-  reservationItem,
-  duration,
-  checkDate
-) => {
-  let timeValueStart = "";
-  let timeValueEnd = "";
+const getFreeTimesUnavailability = (allTimes, reservationItem, duration) => {
+  let timeValue = "";
+  const durationNew = duration - 10;
 
-  if (checkDate === 1) {
-    const durationNew = duration;
-    const unavailableTimes = [];
+  const timeOnly = reservationItem[0].startDate;
+  const newDate = new Date(timeOnly.getTime() - durationNew * 60 * 1000);
+  const timeOnlyValue = newDate.toISOString().split("T")[1];
+  timeValue = timeOnlyValue.substring(0, 5);
 
-    for (const item of reservationItem) {
-      const timeOnlyStart = item.startDate;
-      const timeOnlyEnd = item.endDate;
-
-      const newStartDate = new Date(
-        timeOnlyStart.getTime() - durationNew * 60 * 1000
-      );
-      const timeOnlyValueStart = newStartDate.toISOString().split("T")[1];
-      const timeOnlyValueEnd = timeOnlyEnd.toISOString().split("T")[1];
-
-      timeValueStart = timeOnlyValueStart.substring(0, 5);
-      timeValueEnd = timeOnlyValueEnd.substring(0, 5);
-
-      const dateFreeTimes = allTimes.filter(
-        (time) => time.value >= timeValueStart && time.value <= timeValueEnd
-      );
-
-      unavailableTimes.push(dateFreeTimes);
-    }
-    console.log("::::",unavailableTimes);
-  }
-  if (checkDate === 2) {
-    const timeOnly = reservationItem[0].endDate;
-    const newDate = new Date(timeOnly.getTime());
-    const timeOnlyValue = newDate.toISOString().split("T")[1];
-    timeValueEnd = timeOnlyValue.substring(0, 5);
-  }
+  return allTimes.filter((item) => item.value >= timeValue);
 };
 function updateTimeToTenUTC(dateString, timeString) {
   const datePart = dateString.substring(0, 10);

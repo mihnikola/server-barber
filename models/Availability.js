@@ -38,6 +38,15 @@ const availabilitySchema = new mongoose.Schema(
     approved: {
       type: Number,
     },
+    //status .... default active reservation 0 or cancel reservation 1
+    //approved ... default check reservation 0 or skip reservation 1
+    //type ... reservation 0 or cancellation 1
+    //description.....desc of reservation or cancellation
+
+    //if cancellation...service and user are null
+    //if reservation.... everything is not empty
+
+
   },
   { timestamps: true }
 );
