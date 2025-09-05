@@ -2,7 +2,6 @@ import User from "../models/User.js"; // Assuming User model also uses ES module
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-
 //CLIENTS TAB BEGIN
 export const getClients = async (req, res) => {
   try {
@@ -16,6 +15,7 @@ export const getClients = async (req, res) => {
       {
         $match: {
           isVerified: true,
+          deletedAt: null,
         },
       },
       // Step 2: Join users with their reservations
@@ -140,51 +140,27 @@ export const getClient = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-//(patch or delete)
-export const patchClientUser = async (req, res) => {
+export const softDeleteUser = async (req, res) => {
   try {
-    const userId = req.params.id;
-
-    const { deActivated } = req.body;
-    const updateData = {};
-
-    if (deActivated !== false) {
-      updateData.deActivated = deActivated;
+    const userId = req.params.id; 
+    const deletedUser = await User.findByIdAndUpdate(
+      userId,
+      { deletedAt: new Date() },
+      { new: true }
+    );
+    if (!deletedUser) {
+      return res.status(404).json({ message: "User not found." });
     }
-
-    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
-      new: true,
-    });
-
-    if (!updatedUser) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
     res.status(200).json({
-      message: "User deactivated successfully",
-      user: updatedUser,
+      message: "User soft-deleted successfully.",
+      user: deletedUser,
     });
-  } catch (err) {
-    console.error("Error in patchUser:", err);
-    res.status(500).json({ status: 500, message: err });
+  } catch (error) {
+    console.error("Error soft-deleting user:", error);
+    res.status(500).json({ message: "Server error.", error: error.message });
   }
 };
 //CLIENTS TAB END
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 //SETTINGS EDIT PROFILE ADMIN BEGIN
 export const geAdmin = async (req, res) => {
@@ -273,8 +249,6 @@ export const logout = async (req, res) => {
 
 //SETTINGS EDIT PROFILE ADMIN END
 
-
-
 //LOGIN USER ADMIN BEGIN
 export const loginUser = async (req, res) => {
   try {
@@ -321,11 +295,6 @@ export const loginUser = async (req, res) => {
   }
 };
 //LOGIN USER ADMIN END
-
-
-
-
-
 
 //ovo su moji servisi za kreiranje radnika
 
