@@ -11,6 +11,7 @@ const availabilityRoutes = require("./routes/availabilityRoutes");
 const availabilityAdminRoutes = require("./routes/availabilityAdminRoutes");
 const timesRoutes = require("./routes/timesRoutes");
 const timeAdminRoutes = require("./routes/timeAdminRoutes");
+const placeRoutes = require("./routes/placeRoutes");
 const { default: connectDB } = require("./connectDB");
 
 // --- Konfiguracija Express aplikacije ---
@@ -34,6 +35,7 @@ app.use("/availabilities", availabilityRoutes);
 app.use("/admin/availabilities", availabilityAdminRoutes);
 app.use("/times", timesRoutes);
 app.use("/admin/times", timeAdminRoutes);
+app.use("/places", placeRoutes);
 
 const PORT = process.env.PORT || 3000;
 

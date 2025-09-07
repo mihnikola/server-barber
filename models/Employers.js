@@ -31,6 +31,10 @@ const employersSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    place: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Place",
+    },
   },
   { timestamps: true }
 );
