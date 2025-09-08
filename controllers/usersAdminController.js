@@ -141,6 +141,7 @@ export const getClient = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
 export const softDeleteUser = async (req, res) => {
 
   try {
@@ -283,8 +284,6 @@ export const loginUser = async (req, res) => {
   }
 };
 //LOGIN USER ADMIN END
-
-//ovo su moji servisi za kreiranje radnika
 
 
 // Create a new user

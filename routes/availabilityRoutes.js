@@ -10,6 +10,6 @@ router.post("/", authenticate, availabilityController.createAvailability);
 // Get all availabilities
 router.get("/", authenticate, availabilityController.getAvailabilities);
 router.get("/:id", authenticate, availabilityController.getAvailability);
-router.put("/:id", authenticate, availabilityController.patchAvailability);
+router.put("/:id", authenticate, availabilityController.patchAvailabilityById);
 
 module.exports = router;

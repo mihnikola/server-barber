@@ -6,9 +6,9 @@ const {
 } = require("../helpers");
 const Availability = require("../models/Availability");
 const Token = require("../models/Token");
+const Rating = require("../models/Rating");
 const jwt = require("jsonwebtoken");
 
-// Get all notifications
 exports.getAvailabilities = async (req, res) => {
   const token = req.header("Authorization")
     ? req.header("Authorization").split(" ")[1]
@@ -18,47 +18,90 @@ exports.getAvailabilities = async (req, res) => {
   if (!token) return res.status(403).send("Access denied");
 
   try {
-    // const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
-    const availabilitiesData = await Availability.find();
+    const customerId = decoded.id;
 
-    res.status(200).json(availabilitiesData);
+    const reservations = await Availability.find({
+      user: customerId,
+      status: { $nin: [2] },
+    })
+      .sort({ date: 1 })
+      .populate("service")
+      .populate("employer");
+    res.status(200).json(reservations);
   } catch (err) {
+    console.log("errorcina", err);
     res.status(500).json({ error: err.message });
   }
 };
-
-// Get one availability
 exports.getAvailability = async (req, res) => {
   const { id } = req.params;
+
   try {
-    const availability = await Availability.findOne({ _id: id });
-    res.status(200).json(availability);
+    const reservationItem = await Availability.findOne({ _id: id })
+      .populate("service")
+      .populate("employer");
+    res.status(200).json(reservationItem);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+exports.patchAvailabilityById = async (req, res) => {
+  const token = req.header("Authorization")
+    ? req.header("Authorization").split(" ")[1]
+    : req.body.headers.Authorization
+    ? req.body.headers.Authorization
+    : req.get("authorization");
+  if (!token) return res.status(403).send("Access denied");
 
-// Patch all availabilities
-exports.patchAvailability = async (req, res) => {
   try {
     const { id } = req.params;
-    const { isRead } = req.body.params;
+    const { status, rate, description } = req.body;
 
-    const availability = await Availability.findByIdAndUpdate(
-      id,
-      { isRead },
-      { new: true }
-    );
-    if (!availability) {
-      return res.status(404).send("Availability not found");
+    let newRatingIdValue;
+
+    if (status === 0 || !status) {
+      const newRating = new Rating({
+        rate,
+        description,
+      });
+
+      await newRating.save();
+
+      newRatingIdValue = newRating._id.toString();
     }
-    res.status(200).json({ message: "Availability is read" });
+    const updateObject =
+      status === 0 || !status ? { rating: newRatingIdValue } : { status: 1 };
+
+    const reservation = await Availability.findByIdAndUpdate(id, updateObject, {
+      new: true,
+    });
+
+    if (!reservation) {
+      return res.status(404).send("Reservation not found");
+    }
+    if (status === 0 || !status) {
+      return res
+        .status(200)
+        .json({ message: "Reservation is rated successfully" });
+    }
+    const functionUrl =
+      "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/deleteAppointment";
+    await axios
+      .post(functionUrl, { reservationId: reservation._id.toString() })
+      .then(() => {
+        return res
+          .status(200)
+          .json({ message: "Reservation is cancelled successfully" });
+      })
+      .catch(() => {
+        return res.status(404).send({message: "Reservation is not exist"});
+      });
   } catch (error) {
-    res.status(500).send(error);
+    res.status(500).send({message: "Something went wrong"});
   }
 };
-
 exports.createAvailability = async (req, res) => {
   try {
     const { date, time, service, token, customer, employerId, description } =
@@ -100,15 +143,16 @@ exports.createAvailability = async (req, res) => {
       reservationId: newAvailabilityIdValue,
     };
 
-    const functionUrl = "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/addTaskToFirestore";
-    
+    const functionUrl =
+      "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/addTaskToFirestore";
+
     await axios
       .post(functionUrl, { taskData })
       .then(() => {
-        return res.status(201).json({status: 201, data: newAvailability});
+        return res.status(201).json({ status: 201, data: newAvailability });
       })
-      .catch((err) => { 
-        console.log("sendDataToFirebase",err);
+      .catch((err) => {
+        console.log("sendDataToFirebase", err);
         if (err.errno < 0) {
           return res.status(500).json({ error: "Something went wrong" });
         }
