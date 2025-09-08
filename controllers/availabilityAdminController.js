@@ -1,8 +1,8 @@
 const { default: axios } = require("axios");
 const Availability = require("../models/Availability");
 const jwt = require("jsonwebtoken");
+const Token = require("../models/Token");
 
-// Get all notifications
 exports.getAvailabilities = async (req, res) => {
   const token = req.header("Authorization")
     ? req.header("Authorization").split(" ")[1]
@@ -12,46 +12,73 @@ exports.getAvailabilities = async (req, res) => {
   if (!token) return res.status(403).send("Access denied");
 
   try {
-    // const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    const { dateValue } = req.body;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
-    const availabilitiesData = await Availability.find();
+    const rangeStart = new Date(dateValue + "T00:00:00.000Z").toISOString();
+    const rangeEnd = new Date(dateValue + "T23:00:00.000Z").toISOString();
+
+    const availabilitiesData = await Availability.find({
+      employer: decoded.id,
+      startDate: { $gt: rangeStart },
+      endDate: { $lt: rangeEnd },
+      status: { $nin: [1] },
+    })
+      .sort({ date: 1 })
+      .populate("service")
+      .populate("user");
 
     res.status(200).json(availabilitiesData);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
-
-// Get one availability
 exports.getAvailability = async (req, res) => {
   const { id } = req.params;
   try {
-    const availability = await Availability.findOne({ _id: id });
-    res.status(200).json(availability);
+    const availabilityItem = await Availability.findOne({ _id: id })
+      .populate("service")
+      .populate("user");
+
+    res.status(200).json(availabilityItem);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
-
-// Patch all availabilities
 exports.patchAvailability = async (req, res) => {
   try {
     const { id } = req.params;
-    const { isRead } = req.body.params;
+    const { status } = req.body;
 
-    const availability = await Availability.findByIdAndUpdate(
+    const reservation = await Availability.findByIdAndUpdate(
       id,
-      { isRead },
+      { status },
       { new: true }
     );
-    if (!availability) {
-      return res.status(404).send("Availability not found");
+
+    if (!reservation) {
+      return res.status(404).send("Reservation is not found");
     }
-    res.status(200).json({ message: "Availability is read" });
+
+    const functionUrl =
+      "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/deleteAppointment";
+    await axios
+      .post(functionUrl, { reservationId: reservation._id.toString() })
+      .then(() => {
+        return res
+          .status(200)
+          .json({ message: "Reservation is cancelled successfully" });
+      })
+      .catch(() => {
+        return res
+          .status(404)
+          .json({ message: "Reservation is not found" });
+      });
   } catch (error) {
     res.status(500).send(error);
   }
 };
+
 async function deleteAppointment(reservationId) {
   const functionUrl =
     "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/deleteAppointment";
@@ -86,6 +113,7 @@ exports.createAvailability = async (req, res) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
+    const tokenExpo = await Token.findOne({ user: decoded.id });
     const newAvailability = new Availability({
       startDate,
       endDate,
@@ -99,6 +127,47 @@ exports.createAvailability = async (req, res) => {
       type: 1,
     });
     await newAvailability.save();
+    const newAvailabilityIdValue = newAvailability._id;
+
+
+
+    // u mongodb azurirati sve rezervacije na status 1 kako bi se
+    //  otkazale za datog employera u okviru datog vrem.perioda
+    
+    //u fb kreirati funkciju koja ce obrisati sve rezervacije 
+  
+
+
+
+
+
+
+
+    // const taskData = {
+    //   userId: decoded.id,
+    //   status: "scheduled",
+    //   performAt: startDate,
+    //   token: tokenExpo.token,
+    //   reservationId: newAvailabilityIdValue,
+    // };
+
+    //    const functionUrl2 = "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/deleteAppointment";
+    // await axios
+    //   .post(functionUrl2, { reservationId: reservation._id.toString() })
+    //   .then(() => {
+    //     return res
+    //       .status(200)
+    //       .json({ message: "Reservation is cancelled successfully" });
+    //   })
+    //   .catch(() => {
+    //     return res
+    //       .status(404)
+    //       .json({ message: "Reservation is not found" });
+    //   });
+
+    // const functionUrl =
+    //   "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/addTaskToFirestore";
+
 
     // const reservationsUnavailability = await Availability.updateMany(
     //   {

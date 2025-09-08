@@ -6,7 +6,7 @@ const ratingsSchema = new mongoose.Schema(
       type: Number,
     },
     description: {
-      description: String,
+      type: String,
     },
   },
   { timestamps: true }
