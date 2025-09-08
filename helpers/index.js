@@ -198,6 +198,41 @@ const getFreeTimes = (allTimes, reservations, selectedDate) => {
   const freeTimes = allTimes.filter(
     (time) => !unavailableTimes.includes(time.value)
   );
+
+  return freeTimes;
+};
+
+const getRegularFreeTimes = (allTimes, reservations, selectedDate) => {
+  // First, we create an array of time slots that are unavailable based on the reservations
+  const unavailableTimes = [];
+  reservations.forEach((res) => {
+    const start = new Date(res.startDate);
+    const end = new Date(res.endDate);
+    const duration = res.service.duration;
+
+    // Iterate through the time slots to mark all affected slots as unavailable
+    for (const time of allTimes) {
+      const timeDate = new Date(`${selectedDate}T${time.value}:00.000Z`);
+      const timeWithService = new Date(timeDate);
+      timeWithService.setMinutes(timeWithService.getMinutes() + duration);
+
+      // Check if the time slot falls within a reservation period
+      if (
+        (timeDate >= start && timeDate < end) ||
+        (timeWithService > start && timeWithService <= end) ||
+        (start >= timeDate && end < timeWithService)
+      ) {
+        console.log("getRegularFreeTimes", time.value);
+        unavailableTimes.push(time.value);
+      }
+    }
+  });
+
+  // Now, filter the original timesData to keep only the free slots
+  const freeTimes = allTimes.filter(
+    (time) => !unavailableTimes.includes(time.value)
+  );
+
   return freeTimes;
 };
 const reservationForSameDate = (
@@ -391,4 +426,5 @@ module.exports = {
   getFreeTimesUnavailability,
   getReservationsForDate,
   reservationForSameDate,
+  getRegularFreeTimes,
 };

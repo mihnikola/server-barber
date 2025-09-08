@@ -12,7 +12,7 @@ const router = express.Router();
 router.get('/', usersAdminController.getClients);
 router.get('/search', usersAdminController.findClient);
 router.get('/:id', usersAdminController.getClient);
-
+router.delete('/:id', usersAdminController.softDeleteUser);
 // router.put('/:id', uploadUserImage.single('image'), usersAdminController.patchUser);
 
 // router.get('/:id', usersAdminController.getUser);
