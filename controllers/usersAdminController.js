@@ -1,7 +1,7 @@
 import User from "../models/User.js"; // Assuming User model also uses ES modules
+import Employers from "../models/Employers.js"; // Assuming User model also uses ES modules
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-
 
 //CLIENTS TAB BEGIN
 export const getClients = async (req, res) => {
@@ -140,7 +140,6 @@ export const getClient = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-//(patch or delete)
 export const patchClientUser = async (req, res) => {
   try {
     const userId = req.params.id;
@@ -170,21 +169,6 @@ export const patchClientUser = async (req, res) => {
   }
 };
 //CLIENTS TAB END
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 //SETTINGS EDIT PROFILE ADMIN BEGIN
 export const geAdmin = async (req, res) => {
@@ -273,83 +257,62 @@ export const logout = async (req, res) => {
 
 //SETTINGS EDIT PROFILE ADMIN END
 
-
-
 //LOGIN USER ADMIN BEGIN
 export const loginUser = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
-    // Find the user in the "database"
-    const user = await User.findOne({ username }); // `findOne` is typically better if you expect a single result
+    const user = await Employers.findOne({ email });
 
     if (!user) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    // Compare the password with the hashed password stored in the database
     const isPasswordMatch = await bcrypt.compare(password, user.password);
 
     if (!isPasswordMatch) {
       return res.status(400).json({ message: "Not match password" });
     }
 
-    // if (!user.isVerified) {
-    //   return res.status(400).json({ message: "Not verified" });
-    // }
-
-    // if (user.role !== "administrator") {
-    //   if (user.role !== "employer") {
-    //     return res.status(400).json({ message: "Not permission" });
-    //   }
-    // }
-
     const userData = {
       id: user._id,
-      // role: user.role,
+      role: user.role,
       username: user.username,
     };
 
-    // Create JWT token
     const token = jwt.sign(userData, process.env.JWT_SECRET_KEY, {
       expiresIn: "10000000m",
     });
     res.status(200).json({ status: 200, data: token });
-    // Send the token as a response
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 //LOGIN USER ADMIN END
 
-
-
-
-
-
-//ovo su moji servisi za kreiranje radnika
-
 // Create a new user
 export const createAdminUser = async (req, res) => {
-  const { name, email, password, phoneNumber } = req.body;
+  
+  const { name, email, password } = req.body;
+
   if (!name || !email || !password) {
     return res.status(400).json({
+      status: 400,
       message: "Name, email, password are required.",
     });
   }
 
   try {
-    // Check if user with email already exists
+    const existingUser = await Employers.findOne({ email });
 
-    const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(202).json({ message: "Email already exists." });
+      return res.status(202).json({ status: 202, message: "Email already exists." });
     }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = new User({
+    const newUser = new Employers({
       name,
       email,
       password: hashedPassword,
@@ -359,7 +322,8 @@ export const createAdminUser = async (req, res) => {
     await newUser.save();
 
     res.status(201).json({
-      message: "User created successfully!",
+      status: 201,
+      message: "Employer created successfully!",
     });
   } catch (err) {
     res
