@@ -70,9 +70,7 @@ exports.patchAvailability = async (req, res) => {
           .json({ message: "Reservation is cancelled successfully" });
       })
       .catch(() => {
-        return res
-          .status(404)
-          .json({ message: "Reservation is not found" });
+        return res.status(404).json({ message: "Reservation is not found" });
       });
   } catch (error) {
     res.status(500).send(error);
@@ -91,10 +89,12 @@ async function deleteAppointment(reservationId) {
       console.log("err", err);
     });
 }
+
 async function processUsers(reservationIds) {
   // Step 1: Create an array of promises
   const promises = reservationIds.map(async (id) => {
     // This function call returns a promise for each user
+
     const data = await deleteAppointment(id.toString());
     return data;
   });
@@ -107,6 +107,24 @@ async function processUsers(reservationIds) {
   console.log(results);
   return results;
 }
+async function sendNotification(reservationIds) {
+  // Step 1: Create an array of promises
+  const promises = reservationIds.map(async (id) => {
+    // This function call returns a promise for each user
+
+    const data = await deleteAppointment(id.toString());
+    return data;
+  });
+
+  // Step 2: Wait for all promises to resolve
+  // Promise.all() will wait for every promise in the array to complete
+  const results = await Promise.all(promises);
+
+  // This will now log the array of resolved data
+  console.log(results);
+  return results;
+}
+
 exports.createAvailability = async (req, res) => {
   try {
     const { startDate, endDate, token, description } = req.body;
@@ -129,66 +147,12 @@ exports.createAvailability = async (req, res) => {
     await newAvailability.save();
     const newAvailabilityIdValue = newAvailability._id;
 
-
-
-    // u mongodb azurirati sve rezervacije na status 1 kako bi se
-    //  otkazale za datog employera u okviru datog vrem.perioda
-    
-    //u fb kreirati funkciju koja ce obrisati sve rezervacije 
-  
-
-
-
-
-
-
-
-    // const taskData = {
-    //   userId: decoded.id,
-    //   status: "scheduled",
-    //   performAt: startDate,
-    //   token: tokenExpo.token,
-    //   reservationId: newAvailabilityIdValue,
-    // };
-
-    //    const functionUrl2 = "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/deleteAppointment";
-    // await axios
-    //   .post(functionUrl2, { reservationId: reservation._id.toString() })
-    //   .then(() => {
-    //     return res
-    //       .status(200)
-    //       .json({ message: "Reservation is cancelled successfully" });
-    //   })
-    //   .catch(() => {
-    //     return res
-    //       .status(404)
-    //       .json({ message: "Reservation is not found" });
-    //   });
-
-    // const functionUrl =
-    //   "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/addTaskToFirestore";
-
-
-    // const reservationsUnavailability = await Availability.updateMany(
-    //   {
-    //     status: { $nin: [1] },
-    //     employer: decoded.id,
-    //     type: 0,
-    //     startDate: { $gte: startDate, $lt: endDate },
-    //   },
-    //   {
-    //     $set: { status: 1 },
-    //   }
-    // );
-
     const documentsToUpdate = await Availability.find({
       status: { $nin: [0] },
-      // employer: decoded.id,68b4c4db4c8ee355cbf0ef6e
-      employer: "68b4c4db4c8ee355cbf0ef6e",
+      employer: decoded.id,
       type: 0,
       startDate: { $gte: startDate, $lt: endDate },
     });
-
     // Extract the IDs of the documents
     const reservationIds = documentsToUpdate.map((doc) => doc._id);
     // Update the documents using the extracted IDs
@@ -202,17 +166,12 @@ exports.createAvailability = async (req, res) => {
     );
 
     //1. poslati notifications firebase za otkazivanje rezervacija
+    await sendNotification(reservationIds);
+
     // 2. obrisati sve rezervacije firebase
-    const resolution = await processUsers(reservationIds);
+    await processUsers(reservationIds);
 
-    console.log("first", resolution);
-
-    // await deleteAppointment(rezervacijaId);
-    // await functionCancelReservation(rezervacijaId){
-    // obrisi sve redove u firebase
-    //}
-
-    res.status(201).json(resolution);
+    res.status(201).json({ status: 201, message: "Uspesno kreirano odsustvo" });
   } catch (err) {
     console.log("errorcina", err);
     res.status(500).json({ error: err.message });
