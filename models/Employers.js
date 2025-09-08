@@ -34,6 +34,9 @@ const employersSchema = new mongoose.Schema(
     deletedAt: {
       type: Date,
       default: null,
+    place: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Place"
     },
   },
   { timestamps: true }
