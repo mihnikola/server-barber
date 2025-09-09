@@ -1,7 +1,31 @@
 const { default: axios } = require("axios");
 const Availability = require("../models/Availability");
 const jwt = require("jsonwebtoken");
-const Token = require("../models/Token");
+
+async function sendNotificationRequest(reservationData) {
+  const functionUrl =
+    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/sendNotificationRequest";
+  await axios
+    .post(functionUrl, { reservationIds: reservationData })
+    .then((res) => {
+      console.log("sendNotification resoluve", res.data.message);
+    })
+    .catch((err) => {
+      console.log("sendNotification error", err);
+    });
+}
+async function deleteAppointmentsRequest(reservationData) {
+  const functionUrl =
+    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/deleteAppointmentsRequest";
+  await axios
+    .post(functionUrl, { reservationIds: reservationData })
+    .then((res) => {
+      console.log("deleteAppointmentsRequest resoluve", res.data.message);
+    })
+    .catch((err) => {
+      console.log("deleteAppointmentsRequest error", err);
+    });
+}
 
 exports.getAvailabilities = async (req, res) => {
   const token = req.header("Authorization")
@@ -77,61 +101,12 @@ exports.patchAvailability = async (req, res) => {
   }
 };
 
-async function deleteAppointment(reservationId) {
-  const functionUrl =
-    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/deleteAppointment";
-  await axios
-    .post(functionUrl, { reservationId })
-    .then((res) => {
-      console.log("solve", res.data.message);
-    })
-    .catch((err) => {
-      console.log("err", err);
-    });
-}
-
-async function processUsers(reservationIds) {
-  // Step 1: Create an array of promises
-  const promises = reservationIds.map(async (id) => {
-    // This function call returns a promise for each user
-
-    const data = await deleteAppointment(id.toString());
-    return data;
-  });
-
-  // Step 2: Wait for all promises to resolve
-  // Promise.all() will wait for every promise in the array to complete
-  const results = await Promise.all(promises);
-
-  // This will now log the array of resolved data
-  console.log(results);
-  return results;
-}
-async function sendNotification(reservationIds) {
-  // Step 1: Create an array of promises
-  const promises = reservationIds.map(async (id) => {
-    // This function call returns a promise for each user
-
-    const data = await deleteAppointment(id.toString());
-    return data;
-  });
-
-  // Step 2: Wait for all promises to resolve
-  // Promise.all() will wait for every promise in the array to complete
-  const results = await Promise.all(promises);
-
-  // This will now log the array of resolved data
-  console.log(results);
-  return results;
-}
-
 exports.createAvailability = async (req, res) => {
   try {
     const { startDate, endDate, token, description } = req.body;
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
-    const tokenExpo = await Token.findOne({ user: decoded.id });
     const newAvailability = new Availability({
       startDate,
       endDate,
@@ -145,20 +120,18 @@ exports.createAvailability = async (req, res) => {
       type: 1,
     });
     await newAvailability.save();
-    const newAvailabilityIdValue = newAvailability._id;
 
-    const documentsToUpdate = await Availability.find({
-      status: { $nin: [0] },
+    const reservationsDataDisabled = await Availability.find({
+      status: { $nin: [1] },
       employer: decoded.id,
       type: 0,
       startDate: { $gte: startDate, $lt: endDate },
     });
-    // Extract the IDs of the documents
-    const reservationIds = documentsToUpdate.map((doc) => doc._id);
-    // Update the documents using the extracted IDs
+    const reservationIdsDisabled = reservationsDataDisabled.map((doc) => doc._id.toString());
+
     await Availability.updateMany(
       {
-        _id: { $in: reservationIds },
+        _id: { $in: reservationIdsDisabled },
       },
       {
         $set: { status: 1 },
@@ -166,12 +139,12 @@ exports.createAvailability = async (req, res) => {
     );
 
     //1. poslati notifications firebase za otkazivanje rezervacija
-    await sendNotification(reservationIds);
+    await sendNotificationRequest(reservationIdsDisabled);
 
     // 2. obrisati sve rezervacije firebase
-    await processUsers(reservationIds);
+    await deleteAppointmentsRequest(reservationIdsDisabled);
 
-    res.status(201).json({ status: 201, message: "Uspesno kreirano odsustvo" });
+    res.status(201).json({ status: 201, message: "Uspeno kreirano odsustvo" });
   } catch (err) {
     console.log("errorcina", err);
     res.status(500).json({ error: err.message });
