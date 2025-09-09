@@ -2,7 +2,21 @@ import User from "../models/User.js"; // Assuming User model also uses ES module
 import Employers from "../models/Employers.js"; // Assuming User model also uses ES modules
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import axios from "axios";
 
+
+async function logoutUserFromFirebase(userId) {
+  const functionUrl =
+    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/logoutUserFromFirebase";
+  await axios
+    .post(functionUrl, { userId })
+    .then((res) => {
+      console.log("logoutUserFromFirebase solve", res.data.message);
+    })
+    .catch((err) => {
+      console.log("logoutUserFromFirebase err", err);
+    });
+}
 //CLIENTS TAB BEGIN
 export const getClients = async (req, res) => {
   try {
@@ -166,11 +180,11 @@ export const softDeleteUser = async (req, res) => {
 //CLIENTS TAB END
 
 //SETTINGS EDIT PROFILE ADMIN BEGIN
-export const geAdmin = async (req, res) => {
+export const getEmployer = async (req, res) => {
   try {
     const adminId = req.params.id;
 
-    const user = await User.findOne({ _id: adminId });
+    const user = await Employers.findOne({ _id: adminId });
 
     const userData = {
       id: user._id,
@@ -184,14 +198,14 @@ export const geAdmin = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-export const patchAdminUser = async (req, res) => {
+export const patchEmployer = async (req, res) => {
   try {
     const userId = req.params.id;
 
     // 🔐 1. Decode JWT from URL (e.g., /user/update/:token)
     const email = req.params.id;
 
-    const user = await User.findOne({ email });
+    const user = await Employers.findOne({ email });
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
@@ -204,7 +218,7 @@ export const patchAdminUser = async (req, res) => {
     if (password) updateFields.password = hashedPassword;
     // 🛠️ 4. Update user in MongoDB
 
-    const x = await User.findByIdAndUpdate(user._id, updateFields, {
+    const x = await Employers.findByIdAndUpdate(user._id, updateFields, {
       new: true,
     });
 
@@ -216,7 +230,7 @@ export const patchAdminUser = async (req, res) => {
 
     console.log("updateData", updateData);
 
-    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+    const updatedUser = await Employers.findByIdAndUpdate(userId, updateData, {
       new: true,
     });
 
@@ -233,7 +247,7 @@ export const patchAdminUser = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-export const logout = async (req, res) => {
+export const logoutEmployer = async (req, res) => {
   const { token } = req.body;
 
   try {
@@ -242,7 +256,7 @@ export const logout = async (req, res) => {
 
     return res
       .status(200)
-      .json({ status: 200, message: "User successfully logout!" });
+      .json({ status: 200, message: "Employer successfully logout!" });
   } catch (error) {
     return res
       .status(500)
@@ -253,7 +267,7 @@ export const logout = async (req, res) => {
 //SETTINGS EDIT PROFILE ADMIN END
 
 //LOGIN USER ADMIN BEGIN
-export const loginUser = async (req, res) => {
+export const loginEmployer = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -287,7 +301,7 @@ export const loginUser = async (req, res) => {
 
 
 // Create a new user
-export const createAdminUser = async (req, res) => {
+export const createEmployer = async (req, res) => {
   
   const { name, email, password } = req.body;
 
@@ -325,5 +339,39 @@ export const createAdminUser = async (req, res) => {
     res
       .status(500)
       .send({ status: 500, message: "Something Went Wrong, Please Try Again" });
+  }
+};
+
+//change employers pasword
+export const changeEmployerPassword = async (req, res) => {
+  try {
+    // 🔐 1. Decode JWT from URL (e.g., /user/update/:token)
+    const email = req.params.id;
+
+    const user = await Employers.findOne({ email });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const { password } = req.body;
+
+    // 🧾 3. Prepare update fields
+    const updateFields = {};
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    if (password) updateFields.password = hashedPassword;
+    // 🛠️ 4. Update user in MongoDB
+
+    const x = await Employers.findByIdAndUpdate(user._id, updateFields, {
+      new: true,
+    });
+
+    // ✅ 5. Return updated user
+    res.status(200).json({
+      message: "Employer updated successfully new password",
+      status: 200,
+    });
+  } catch (err) {
+    console.error("Error in patchUserImage:", err);
+    res.status(500).json({ message: "Internal server error" });
   }
 };

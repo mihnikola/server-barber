@@ -398,21 +398,7 @@ export const loginViaGoogle = async (req, res) => {
   }
 };
 
-export const getUsers = async (req, res) => {
-  try {
-    const employers = await Employers.find();
-    const employersData = employers.map((user) => {
-      return {
-        id: user._id,
-        name: user.name,
-        image: user.image,
-      };
-    });
-    res.status(200).json({ status: 200, data: employersData });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+
 
 export const getUser = async (req, res) => {
   try {
@@ -672,5 +658,31 @@ export const verifyOtpCode = async (req, res) => {
   } catch (error) {
     console.log(error.message);
     return res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+
+
+
+
+
+
+/*
+EMPLOYERS GET
+*/
+
+export const getEmployers = async (req, res) => {
+  try {
+    const employers = await Employers.find();
+    const employersData = employers.map((user) => {
+      return {
+        id: user._id,
+        name: user.name,
+        image: user.image,
+      };
+    });
+    res.status(200).json({ status: 200, data: employersData });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };

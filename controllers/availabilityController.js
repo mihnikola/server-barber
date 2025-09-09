@@ -79,7 +79,6 @@ exports.patchAvailabilityById = async (req, res) => {
       new: true,
     });
 
-    console.log("reservation",reservation)
 
     if (!reservation) {
       return res.status(404).send("Reservation not found");
@@ -116,7 +115,6 @@ exports.patchAvailabilityById = async (req, res) => {
 };
 exports.createAvailability = async (req, res) => {
   try {
-    console.log("req.body;", req.body);
     const { date, time, service, token, customer, employerId, description } =
       req.body;
 

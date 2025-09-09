@@ -100,13 +100,10 @@ exports.patchAvailability = async (req, res) => {
     res.status(500).send(error);
   }
 };
-
 exports.createAvailability = async (req, res) => {
   try {
     const { startDate, endDate, token, description } = req.body;
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-
     const newAvailability = new Availability({
       startDate,
       endDate,
@@ -144,7 +141,7 @@ exports.createAvailability = async (req, res) => {
     // 2. obrisati sve rezervacije firebase
     await deleteAppointmentsRequest(reservationIdsDisabled);
 
-    res.status(201).json({ status: 201, message: "Uspeno kreirano odsustvo" });
+    res.status(201).json({ status: 201, message: "Uspešno kreirano odsustvo" });
   } catch (err) {
     console.log("errorcina", err);
     res.status(500).json({ error: err.message });
