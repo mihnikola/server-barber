@@ -22,14 +22,15 @@ exports.getAvailabilities = async (req, res) => {
 
     const customerId = decoded.id;
 
-    const reservations = await Availability.find({
+    const reservationData = await Availability.find({
       user: customerId,
-      status: { $nin: [2] },
+      status: { $nin: [1] },
     })
       .sort({ date: 1 })
       .populate("service")
       .populate("employer");
-    res.status(200).json(reservations);
+
+    res.status(200).json(reservationData);
   } catch (err) {
     console.log("errorcina", err);
     res.status(500).json({ error: err.message });
@@ -41,6 +42,7 @@ exports.getAvailability = async (req, res) => {
   try {
     const reservationItem = await Availability.findOne({ _id: id })
       .populate("service")
+      .populate("rating")
       .populate("employer");
     res.status(200).json(reservationItem);
   } catch (err) {
@@ -61,7 +63,7 @@ exports.patchAvailabilityById = async (req, res) => {
 
     let newRatingIdValue;
 
-    if (status === 0 || !status) {
+    if (!status) {
       const newRating = new Rating({
         rate,
         description,
@@ -71,39 +73,50 @@ exports.patchAvailabilityById = async (req, res) => {
 
       newRatingIdValue = newRating._id.toString();
     }
-    const updateObject =
-      status === 0 || !status ? { rating: newRatingIdValue } : { status: 1 };
+    const updateObject = !status ? { rating: newRatingIdValue } : { status: 1 };
 
     const reservation = await Availability.findByIdAndUpdate(id, updateObject, {
       new: true,
     });
 
+    console.log("reservation",reservation)
+
     if (!reservation) {
       return res.status(404).send("Reservation not found");
     }
-    if (status === 0 || !status) {
+    if (!status) {
       return res
         .status(200)
         .json({ message: "Reservation is rated successfully" });
     }
     const functionUrl =
       "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/deleteAppointment";
-    await axios
+    const resultDelete = await axios
       .post(functionUrl, { reservationId: reservation._id.toString() })
-      .then(() => {
-        return res
-          .status(200)
-          .json({ message: "Reservation is cancelled successfully" });
+      .then((resu) => {
+        return true;
       })
-      .catch(() => {
-        return res.status(404).send({message: "Reservation is not exist"});
+      .catch((er) => {
+        return false;
       });
+
+    if (resultDelete) {
+      return res
+        .status(200)
+        .json({ message: "Reservation is cancelled successfully" });
+    }
+
+    return res
+      .status(400)
+      .send({ status: 400, message: "Reservation is not exist" });
   } catch (error) {
-    res.status(500).send({message: "Something went wrong"});
+    console.log("alooooobject", error);
+    res.status(500).send({ message: "Something went wrong" });
   }
 };
 exports.createAvailability = async (req, res) => {
   try {
+    console.log("req.body;", req.body);
     const { date, time, service, token, customer, employerId, description } =
       req.body;
 
