@@ -7,8 +7,6 @@ const Availability = require("../models/Availability");
 const Time = require("../models/Time");
 const jwt = require("jsonwebtoken");
 
-
-
 exports.getTimes = async (req, res) => {
   const timeZone = req.headers["time-zone"];
 
@@ -62,14 +60,12 @@ exports.getTimes = async (req, res) => {
       serviceDuration
     );
 
-    const getCurrentFreeTimes = getTimeZoneSameDay(selectedDate,timeZone,timesDataFee);
-
-
-    if (getCurrentFreeTimes.length > 0) {
-      return res.status(200).json(getCurrentFreeTimes);
-    }
-
-    return res.status(200).json(timesData);
+    const getCurrentFreeTimes = getTimeZoneSameDay(
+      selectedDate,
+      timeZone,
+      timesDataFee
+    );
+    return res.status(200).json(getCurrentFreeTimes);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
