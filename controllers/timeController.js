@@ -1,3 +1,4 @@
+const { getTimeZoneSameDay } = require("../helpers/getTimeZone");
 const {
   betweenDateUnavailability,
   getAvailableTimes,
@@ -6,7 +7,11 @@ const Availability = require("../models/Availability");
 const Time = require("../models/Time");
 const jwt = require("jsonwebtoken");
 
+
+
 exports.getTimes = async (req, res) => {
+  const timeZone = req.headers["time-zone"];
+
   const token = req.header("Authorization")
     ? req.header("Authorization").split(" ")[1]
     : req.body.headers.Authorization
@@ -56,8 +61,12 @@ exports.getTimes = async (req, res) => {
       selectedDate,
       serviceDuration
     );
-    if (timesDataFee.length > 0) {
-      return res.status(200).json(timesDataFee);
+
+    const getCurrentFreeTimes = getTimeZoneSameDay(selectedDate,timeZone,timesDataFee);
+
+
+    if (getCurrentFreeTimes.length > 0) {
+      return res.status(200).json(getCurrentFreeTimes);
     }
 
     return res.status(200).json(timesData);

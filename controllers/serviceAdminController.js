@@ -102,20 +102,15 @@ exports.getServices = async (req, res) => {
 };
 
 exports.getService = async (req, res) => {
-
-
   try {
     const id = req.params.id;
-
     const service = await Service.findOne({ _id: id });
-
     const serviceData = {
       id: service._id,
       name: service.name,
       price: service.price,
       duration: service?.duration,
     };
-
     res.status(200).json({ status: 200, data: serviceData });
   } catch (err) {
     res.status(500).json({ error: err.message });

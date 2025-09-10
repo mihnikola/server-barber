@@ -8,8 +8,10 @@ const Availability = require("../models/Availability");
 const Token = require("../models/Token");
 const Rating = require("../models/Rating");
 const jwt = require("jsonwebtoken");
+const { getSortReservationData } = require("../helpers/getTimeZone");
 
 exports.getAvailabilities = async (req, res) => {
+  const timeZone = req.headers["time-zone"];
   const token = req.header("Authorization")
     ? req.header("Authorization").split(" ")[1]
     : req.body.headers.Authorization
@@ -30,7 +32,9 @@ exports.getAvailabilities = async (req, res) => {
       .populate("service")
       .populate("employer");
 
-    res.status(200).json(reservationData);
+    const reservations = getSortReservationData(reservationData, timeZone);
+
+    res.status(200).json(reservations);
   } catch (err) {
     console.log("errorcina", err);
     res.status(500).json({ error: err.message });
@@ -78,7 +82,6 @@ exports.patchAvailabilityById = async (req, res) => {
     const reservation = await Availability.findByIdAndUpdate(id, updateObject, {
       new: true,
     });
-
 
     if (!reservation) {
       return res.status(404).send("Reservation not found");

@@ -1,7 +1,9 @@
+
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const app = express();
+const cron = require("node-cron");
 
 const tokenRoutes = require("./routes/tokenRoutes");
 const userRoutes = require("./routes/userRoutes");
@@ -15,6 +17,7 @@ const timeAdminRoutes = require("./routes/timeAdminRoutes");
 const placeRoutes = require("./routes/placeRoutes");
 const placeAdminRoutes = require("./routes/placeAdminRoutes");
 const { default: connectDB } = require("./connectDB");
+const User = require("./models/User");
 
 app.use(cors());
 
@@ -40,7 +43,6 @@ const PORT = process.env.PORT || 3000;
 
 async function startApp() {
   const dbConnected = await connectDB();
-
   if (dbConnected) {
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
@@ -50,4 +52,29 @@ async function startApp() {
     process.exit(1);
   }
 }
+const deleteOldUsers = async () => {
+  try {
+    const monthAgo = new Date();
+    monthAgo.setMonth(monthAgo.getMonth() - 1);
+
+    const result = await User.deleteMany({
+      createdAt: { $lt: threeMonthsAgo },
+      isVerified: false,
+      role: { $exists: false },
+    });
+
+    console.log(
+      "Brisanje starih korisnika uspešno završeno (simulacija).",
+      result,
+      threeMonthsAgo
+    );
+  } catch (error) {
+    console.error("Greška pri brisanju starih korisnika:", error);
+  }
+};
+
+cron.schedule("0 0 1 * *", () => {
+  deleteOldUsers();
+});
+
 startApp();
