@@ -48,6 +48,10 @@ exports.getAvailability = async (req, res) => {
       .populate("service")
       .populate("rating")
       .populate("employer");
+
+
+
+      
     res.status(200).json(reservationItem);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -89,7 +93,7 @@ exports.patchAvailabilityById = async (req, res) => {
     if (!status) {
       return res
         .status(200)
-        .json({ message: "Reservation is rated successfully" });
+        .json({ status: 200, message: "Reservation is rated successfully" });
     }
     const functionUrl =
       "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/deleteAppointment";
@@ -104,8 +108,11 @@ exports.patchAvailabilityById = async (req, res) => {
 
     if (resultDelete) {
       return res
-        .status(200)
-        .json({ message: "Reservation is cancelled successfully" });
+        .status(201)
+        .json({
+          status: 201,
+          message: "Reservation is cancelled successfully",
+        });
     }
 
     return res

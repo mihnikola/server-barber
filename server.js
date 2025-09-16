@@ -15,6 +15,8 @@ const availabilityAdminRoutes = require("./routes/availabilityAdminRoutes");
 const timesRoutes = require("./routes/timesRoutes");
 const timeAdminRoutes = require("./routes/timeAdminRoutes");
 const placeRoutes = require("./routes/placeRoutes");
+const companyRoutes = require("./routes/companyRoutes");
+const companyAdminRoutes = require("./routes/companyAdminRoutes");
 const placeAdminRoutes = require("./routes/placeAdminRoutes");
 const { default: connectDB } = require("./connectDB");
 const User = require("./models/User");
@@ -29,6 +31,8 @@ app.use("/images", express.static("images"));
 
 app.use("/api", tokenRoutes);
 app.use("/users", userRoutes);
+app.use("/company", companyRoutes);
+app.use("/admin/company", companyAdminRoutes);
 app.use("/admin/users", userAdminRoutes);
 app.use("/services", serviceRoutes);
 app.use("/admin/services", serviceAdminRoutes);
