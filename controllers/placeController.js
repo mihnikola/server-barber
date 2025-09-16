@@ -7,12 +7,10 @@ exports.getPlaces = async (req, res) => {
       return {
         id: item._id,
         address: item.address,
-        destinationLat: item.destinationLat,
-        destinationLon: item.destinationLon,
       };
     });
 
-    res.status(200).json(placesData);
+    res.status(200).json({status:200, data: placesData});
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
