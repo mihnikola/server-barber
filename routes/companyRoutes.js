@@ -1,6 +1,5 @@
 const express = require("express");
 const companyController = require("../controllers/companyController");
-const { authenticate } = require("../helpers");
 const router = express.Router();
-router.get("/", authenticate, companyController.getCompany);
+router.get("/", companyController.getCompany);
 module.exports = router;
