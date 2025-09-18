@@ -6,10 +6,6 @@ const companySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    logo: {
-      type: String,
-      required: true,
-    },
     mapsLink: {
       type: String,
       required: true,
@@ -17,13 +13,19 @@ const companySchema = new mongoose.Schema(
     contact: {
       type: String,
     },
-    description: {
+    aboutUs: {
+      type: Object,
+    },
+    workDays: {
       type: String,
     },
-    workHoursDescription: {
+    workSaturday: {
       type: String,
     },
-    coverImages: {
+    holidays: {
+      type: String,
+    },
+    media: {
       type: Object,
     },
   },
