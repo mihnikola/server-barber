@@ -6,18 +6,28 @@ const app = express();
 const cron = require("node-cron");
 
 const tokenRoutes = require("./routes/tokenRoutes");
+
 const userRoutes = require("./routes/userRoutes");
 const userAdminRoutes = require("./routes/userAdminRoutes");
+
 const serviceRoutes = require("./routes/serviceRoutes");
 const serviceAdminRoutes = require("./routes/serviceAdminRoutes");
+
 const availabilityRoutes = require("./routes/availabilityRoutes");
 const availabilityAdminRoutes = require("./routes/availabilityAdminRoutes");
+
 const timesRoutes = require("./routes/timesRoutes");
 const timeAdminRoutes = require("./routes/timeAdminRoutes");
-const placeRoutes = require("./routes/placeRoutes");
+
 const companyRoutes = require("./routes/companyRoutes");
 const companyAdminRoutes = require("./routes/companyAdminRoutes");
+
+const placeRoutes = require("./routes/placeRoutes");
 const placeAdminRoutes = require("./routes/placeAdminRoutes");
+
+const initialRoutes = require("./routes/initialRoutes");
+const initialAdminRoutes = require("./routes/initialAdminRoutes");
+
 const { default: connectDB } = require("./connectDB");
 const User = require("./models/User");
 
@@ -30,16 +40,25 @@ app.use(express.static("public"));
 app.use("/images", express.static("images"));
 
 app.use("/api", tokenRoutes);
+
 app.use("/users", userRoutes);
+app.use("/admin/users", userAdminRoutes);
+
 app.use("/company", companyRoutes);
 app.use("/admin/company", companyAdminRoutes);
-app.use("/admin/users", userAdminRoutes);
+
+app.use("/initial", initialRoutes);
+app.use("/admin/initial", initialAdminRoutes);
+
 app.use("/services", serviceRoutes);
 app.use("/admin/services", serviceAdminRoutes);
+
 app.use("/availabilities", availabilityRoutes);
 app.use("/admin/availabilities", availabilityAdminRoutes);
+
 app.use("/times", timesRoutes);
 app.use("/admin/times", timeAdminRoutes);
+
 app.use("/places", placeRoutes);
 app.use("/admin/places", placeAdminRoutes);
 

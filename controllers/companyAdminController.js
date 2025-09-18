@@ -13,6 +13,8 @@ exports.createCompany = [
       { name: "coverImageHome", maxCount: 1 },
       { name: "coverImageAppointments", maxCount: 1 },
       { name: "coverImageBarber", maxCount: 1 },
+      { name: "coverImageSettings", maxCount: 1 },
+      { name: "coverImageReview", maxCount: 1 },
       { name: "logo", maxCount: 1 },
       { name: "icon", maxCount: 1 },
     ])(req, res, (err) => {
@@ -47,6 +49,8 @@ exports.createCompany = [
         "coverImageHome",
         "coverImageAppointments",
         "coverImageBarber",
+        "coverImageSettings",
+        "coverImageReview",
         "logo",
         "icon",
       ]) {
@@ -85,6 +89,8 @@ exports.createCompany = [
           coverImageHome: updateData.coverImageHome,
           coverImageAppointments: updateData.coverImageAppointments,
           coverImageBarber: updateData.coverImageBarber,
+          coverImageSettings: updateData.coverImageSettings,
+          coverImageReview: updateData.coverImageReview,
           logo: updateData.logo,
           icon: updateData.icon,
         },
