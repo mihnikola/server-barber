@@ -282,12 +282,12 @@ export const verifyEmail = async (req, res) => {
     if (!result) {
       return res
         .status(400)
-        .json({ error: "Invalid or expired verification otp code." });
+        .json({ status: 401, error: "Invalid or expired verification otp code." });
     }
 
     // Check if the user is already verified
     if (user.isVerified) {
-      return res.status(400).json({ error: "User already verified." });
+      return res.status(400).json({ status: 403, error: "User already verified." });
     }
 
     // Mark the user as verified
