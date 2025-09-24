@@ -13,18 +13,7 @@ const companySchema = new mongoose.Schema(
     contact: {
       type: String,
     },
-    aboutUs: {
-      type: Object,
-    },
-    workDays: {
-      type: String,
-    },
-    workSaturday: {
-      type: String,
-    },
-    holidays: {
-      type: String,
-    },
+    
     media: {
       type: Object,
     },

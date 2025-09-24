@@ -1,4 +1,3 @@
-
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
@@ -27,6 +26,9 @@ const placeAdminRoutes = require("./routes/placeAdminRoutes");
 
 const initialRoutes = require("./routes/initialRoutes");
 const initialAdminRoutes = require("./routes/initialAdminRoutes");
+
+const aboutUsRoutes = require("./routes/aboutUsRoutes");
+const reviewRoutes = require("./routes/reviewRoutes");
 
 const { default: connectDB } = require("./connectDB");
 const User = require("./models/User");
@@ -61,6 +63,9 @@ app.use("/admin/times", timeAdminRoutes);
 
 app.use("/places", placeRoutes);
 app.use("/admin/places", placeAdminRoutes);
+
+app.use("/aboutUs", aboutUsRoutes);
+app.use("/review", reviewRoutes);
 
 const PORT = process.env.PORT || 3000;
 
