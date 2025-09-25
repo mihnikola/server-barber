@@ -271,8 +271,8 @@ export const createUser = async (req, res) => {
 };
 
 export const verifyEmail = async (req, res) => {
-  const email = req.query["params[email]"];
-  const otpCode = req.query["params[otpCode]"];
+  const email = req.query["email"];
+  const otpCode = req.query["otpCode"];
   try {
     // Verify the token using the secret key
 
@@ -280,14 +280,17 @@ export const verifyEmail = async (req, res) => {
     const user = await User.findOne({ email });
     let result = await VerificationOtpCode.findOne({ otp: otpCode, email });
     if (!result) {
-      return res
-        .status(400)
-        .json({ status: 401, error: "Invalid or expired verification otp code." });
+      return res.status(400).json({
+        status: 401,
+        error: "Invalid or expired verification otp code.",
+      });
     }
 
     // Check if the user is already verified
     if (user.isVerified) {
-      return res.status(400).json({ status: 403, error: "User already verified." });
+      return res
+        .status(400)
+        .json({ status: 403, error: "User already verified." });
     }
 
     // Mark the user as verified
@@ -302,8 +305,6 @@ export const verifyEmail = async (req, res) => {
     res.status(500).json({ error: "Failed to verify the token." });
   }
 };
-
-
 
 // Login user
 export const loginUser = async (req, res) => {
@@ -397,8 +398,6 @@ export const loginViaGoogle = async (req, res) => {
       .send({ status: 500, message: "Something Went Wrong, Please Try Again" });
   }
 };
-
-
 
 export const getUser = async (req, res) => {
   try {
@@ -635,37 +634,32 @@ export const sendOTPviaLogin = async (req, res) => {
 
 export const verifyOtpCode = async (req, res) => {
   try {
-    const email = req.query["params[email]"];
-    const otpCode = req.query["params[otpCode]"];
-    console.log("email otpCode", otpCode, email);
+    const email = req.query["email"];
+    const otpCode = req.query["otpCode"];
 
     let result = await VerificationOtpCode.findOne({ otp: otpCode, email });
-    console.log("object", result);
+    console.log("object", email, otpCode);
 
-    if (result) {
+    if (result === null) {
+      res.status(300).json({
+        success: false,
+        message: `Your otp code is invalid`,
+        status: 300,
+      });
+    } else {
       res.status(200).json({
         success: true,
         message: `Your otp code is valid`,
         status: 200,
       });
-    } else {
-      res.status(300).json({
-        success: true,
-        message: `Your otp code is invalid`,
-        status: 300,
-      });
     }
   } catch (error) {
+    console.log("email bhcvgv", otpCode, email, result);
+
     console.log(error.message);
     return res.status(500).json({ success: false, error: error.message });
   }
 };
-
-
-
-
-
-
 
 /*
 EMPLOYERS GET
