@@ -22,6 +22,8 @@ exports.getAvailabilities = async (req, res) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
+   
+
     const customerId = decoded.id;
 
     const reservationData = await Availability.find({

@@ -1,6 +1,6 @@
 const express = require("express");
 const availabilityController = require("../controllers/availabilityController");
-const { authenticate } = require("../helpers");
+const { authenticate } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 

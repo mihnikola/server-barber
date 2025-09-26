@@ -1,7 +1,7 @@
 const express = require("express");
 const serviceAdminController = require("../controllers/serviceAdminController");
-const { authenticate } = require("../helpers");
 const uploadUserImage = require('../middleware/uploadUserImage');
+const { authenticate } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 

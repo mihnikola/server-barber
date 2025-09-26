@@ -1,9 +1,11 @@
 const { default: axios } = require("axios");
 const Time = require("../models/Time");
-const jwt = require("jsonwebtoken");
+
+
 // Import Firestore Timestamp if you're working with Firebase SDK
-require("dotenv").config();
 const { Readable } = require("stream"); // This imports the Readable stream correctly
+
+require("dotenv").config();
 
 // Your base64-encoded image (for example, a PNG image)
 function base64ToUriFunc(base64String) {
@@ -88,23 +90,7 @@ const convertWithChooseService = (timeString, serviceDuration) => {
   return newTime;
 };
 
-// Middleware to protect routes (auth middleware)
-const authenticate = (req, res, next) => {
-  const token = req.header("Authorization")
-    ? req.header("Authorization").split(" ")[1]
-    : req.body.headers.Authorization
-    ? req.body.headers.Authorization
-    : req.get("authorization");
-  if (!token) return res.status(403).send("Access denied");
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    req.user = decoded;
-    next();
-  } catch (err) {
-    console.log("authenticate", err);
-    res.status(400).send("Invalid token");
-  }
-};
+
 
 const convertToTimeStamp = (dateStr, timeStr) => {
   // Parse the date string into a JavaScript Date object
@@ -415,7 +401,6 @@ module.exports = {
   timeToParameters,
   addMinutesToTime,
   convertWithChooseService,
-  authenticate,
   base64ToUriFunc,
   prettyUrlDataImage,
   convertToTimeStamp,

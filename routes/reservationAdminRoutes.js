@@ -1,6 +1,6 @@
 const express = require('express');
 const reservationAdminController = require('../controllers/reservationAdminController');
-const { authenticate } = require('../helpers');
+const { authenticate } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
