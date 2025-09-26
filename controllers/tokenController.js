@@ -59,6 +59,7 @@ exports.saveToken = async (req, res) => {
 
   try {
     const userData = await Token.findOne({ user: tokenUser });
+    console.log("tokenExpo",tokenExpo)
     if (userData) {
       await Token.findOneAndUpdate(
         { user: tokenUser },
