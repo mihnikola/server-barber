@@ -16,9 +16,9 @@ const authenticate = async (req, res, next) => {
     const isValid = await Token.find({ token: decoded.token });
 
     console.log("decoded.token",decoded);
-    console.log(".isValid.",isValid);
+    console.log(".isValid",isValid);
 
-    if (!isValid) {
+    if (!isValid || isValid.length === 0) {
       return res
         .status(401)
         .json({ status: 401, message: "Unauthorized: Token invalidated" });
