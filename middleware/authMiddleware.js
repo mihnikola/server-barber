@@ -15,6 +15,9 @@ const authenticate = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     const isValid = await Token.find({ token: decoded.token });
 
+    console.log("decoded.token",decoded);
+    console.log(".isValid.",isValid);
+
     if (!isValid) {
       return res
         .status(401)
