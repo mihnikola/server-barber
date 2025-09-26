@@ -309,7 +309,7 @@ export const verifyEmail = async (req, res) => {
 // Login user
 export const loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, expoToken } = req.body;
     // Find the user in the "database"
     const user = await User.findOne({ email }); // `findOne` is typically better if you expect a single result
 
@@ -337,6 +337,7 @@ export const loginUser = async (req, res) => {
     }
     const userData = {
       id: user._id.toHexString(),
+      token: expoToken,
       email: user.email,
     };
 
