@@ -405,7 +405,6 @@ export const getUser = async (req, res) => {
     const token = req.params.id;
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    console.log("getUser++", token);
 
     const user = await User.findOne({ _id: decoded.id });
 
@@ -667,8 +666,9 @@ EMPLOYERS GET
 */
 
 export const getEmployers = async (req, res) => {
+  const id = req.query["location[0][id]"] || req.query["location[location][id]"];
   try {
-    const employers = await Employers.find();
+    const employers = await Employers.find({ place: id });
     const employersData = employers.map((user) => {
       return {
         id: user._id,
