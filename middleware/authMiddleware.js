@@ -15,7 +15,7 @@ const authenticate = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     const isValid = await Token.find({ token: decoded.token });
 
-    if (!isValid) {
+    if (!isValid || isValid.length === 0) {
       return res
         .status(401)
         .json({ status: 401, message: "Unauthorized: Token invalidated" });
