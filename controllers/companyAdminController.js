@@ -33,7 +33,6 @@ exports.createCompany = [
     try {
       const {
         name,
-        mapsLink,
         contact,
         title,
         text,
@@ -74,7 +73,6 @@ exports.createCompany = [
 
       const newCompany = new Company({
         name,
-        mapsLink,
         contact,
         aboutUs: {
           title,

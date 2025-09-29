@@ -6,10 +6,6 @@ const companySchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    mapsLink: {
-      type: String,
-      required: true,
-    },
     contact: {
       type: String,
     },

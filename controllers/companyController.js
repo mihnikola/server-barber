@@ -13,7 +13,6 @@ exports.getCompany = async (req, res) => {
     const companiesData = {
       _id: companies._id,
       name: companies.name,
-      mapsLink: companies.mapsLink,
       contact: companies.contact,
       media: companies.media,
     };

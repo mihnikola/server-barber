@@ -7,6 +7,7 @@ exports.getPlaces = async (req, res) => {
       return {
         id: item._id,
         address: item.address,
+        mapLink: item.mapLink,
       };
     });
 

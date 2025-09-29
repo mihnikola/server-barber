@@ -6,11 +6,7 @@ const placeSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    destinationLat: {
-      type: String,
-      required: true,
-    },
-    destinationLon: {
+    mapLink: {
       type: String,
       required: true,
     },

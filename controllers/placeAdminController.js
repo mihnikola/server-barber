@@ -1,11 +1,10 @@
 const Place = require("../models/Place");
 exports.createPlace = async (req, res) => {
   try {
-    const { address, destinationLat, destinationLon } = req.body;
+    const { address, mapLink } = req.body;
     const newPlace = new Place({
       address,
-      destinationLat,
-      destinationLon,
+      mapLink,
     });
     await newPlace.save();
     res.status(201).json(newPlace);
@@ -31,8 +30,7 @@ exports.getPlaces = async (req, res) => {
       return {
         id: item._id,
         address: item.address,
-        destinationLat: item.destinationLat,
-        destinationLon: item.destinationLon,
+        mapLink: item.mapLink,
       };
     });
 
