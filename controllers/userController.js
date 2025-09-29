@@ -222,7 +222,7 @@ export const createUser = async (req, res) => {
     const otpPayload = { email, otp, expireAt: expirationTime };
     await VerificationOtpCode.create(otpPayload);
 
-    const subject = "Registration";
+    const subject = "Account validation";
 
     const message = `Your otp code is ${otp}`;
 
@@ -518,7 +518,7 @@ export const sendOTP = async (req, res) => {
     const otpPayload = { email, otp, expireAt: expirationTime };
     await VerificationOtpCode.create(otpPayload);
 
-    const subject = "Forgot password";
+    const subject = "Account validation";
 
     const message = `Your otp code is ${otp}`;
 
@@ -592,7 +592,7 @@ export const sendOTPviaLogin = async (req, res) => {
     const otpPayload = { email, otp, expireAt: expirationTime };
     await VerificationOtpCode.create(otpPayload);
 
-    const subject = "Registration";
+    const subject = "Account validation";
 
     const message = `Your otp code is ${otp}`;
 
