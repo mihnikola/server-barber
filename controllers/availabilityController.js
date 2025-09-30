@@ -30,7 +30,12 @@ exports.getAvailabilities = async (req, res) => {
     })
       .sort({ date: 1 })
       .populate("service")
-      .populate("employer");
+      .populate({
+        path: "employer",
+        populate: {
+          path: "place",
+        },
+      });
 
     const reservations = getSortReservationData(reservationData, timeZone);
 
