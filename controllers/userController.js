@@ -489,6 +489,8 @@ async function logoutUserFromFirebase(userId) {
     });
 }
 export const sendOTP = async (req, res) => {
+  const lang = req.headers["language"];
+
   try {
     const email = req.query["params[email]"];
     const expirationTime = new Date();
@@ -517,9 +519,15 @@ export const sendOTP = async (req, res) => {
     const otpPayload = { email, otp, expireAt: expirationTime };
     await VerificationOtpCode.create(otpPayload);
 
-    const subject = "Account validation";
-
-    const message = `Your otp code is ${otp}`;
+    let subject = "";
+    let message = "";
+    if (lang === "en") {
+      subject = "Account validation";
+      message = `Your otp code is ${otp}`;
+    } else {
+      subject = "Validacija naloga";
+      message = `Vaš otp kod je ${otp}`;
+    }
 
     const receipients = email;
 
@@ -666,7 +674,8 @@ EMPLOYERS GET
 */
 
 export const getEmployers = async (req, res) => {
-  const id = req.query["location[0][id]"] || req.query["location[location][id]"];
+  const id =
+    req.query["location[0][id]"] || req.query["location[location][id]"];
   try {
     const employers = await Employers.find({ place: id });
     const employersData = employers.map((user) => {
