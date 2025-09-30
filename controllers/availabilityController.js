@@ -9,6 +9,7 @@ const Token = require("../models/Token");
 const Rating = require("../models/Rating");
 const jwt = require("jsonwebtoken");
 const { getSortReservationData } = require("../helpers/getTimeZone");
+const { LOCALIZATION_MAP } = require("../helpers/localizationMap");
 
 exports.getAvailabilities = async (req, res) => {
   const timeZone = req.headers["time-zone"];
@@ -19,6 +20,8 @@ exports.getAvailabilities = async (req, res) => {
     : req.get("authorization");
   if (!token) return res.status(403).send("Access denied");
 
+  const lang = req.headers["language"];
+  const localization = LOCALIZATION_MAP[lang]?.SERVICES;
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
@@ -39,14 +42,36 @@ exports.getAvailabilities = async (req, res) => {
 
     const reservations = getSortReservationData(reservationData, timeZone);
 
-    res.status(200).json(reservations);
+    const reservationFinalData = reservations.map((item) => {
+      return {
+        ...item,
+        service: {
+          ...item.service,
+          name: localization[item.service.name] || item.service.name,
+        },
+      };
+    });
+
+    res.status(200).json(reservationFinalData);
   } catch (err) {
     console.log("errorcina", err);
     res.status(500).json({ error: err.message });
   }
 };
+
+function updateServiceName(reservationItem,localization) {
+  if (reservationItem.service) {
+    reservationItem.service.name = localization[reservationItem.service.name];
+  }
+  return reservationItem;
+}
+
+
 exports.getAvailability = async (req, res) => {
   const { id } = req.params;
+
+  const lang = req.headers["language"];
+  const localization = LOCALIZATION_MAP[lang]?.SERVICES;
 
   try {
     const reservationItem = await Availability.findOne({ _id: id })
@@ -59,7 +84,9 @@ exports.getAvailability = async (req, res) => {
         },
       });
 
-    res.status(200).json(reservationItem);
+    const updatedReservation = updateServiceName(reservationItem,localization);
+
+    res.status(200).json(updatedReservation);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
