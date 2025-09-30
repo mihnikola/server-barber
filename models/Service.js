@@ -11,7 +11,7 @@ const serviceSchema = new mongoose.Schema(
       required: true,
     },
     duration: {
-      type: Number, // Duration in minutes
+      type: Number,
       required: true,
     },
     image: {
