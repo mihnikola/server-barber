@@ -22,8 +22,6 @@ exports.getAvailabilities = async (req, res) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
-   
-
     const customerId = decoded.id;
 
     const reservationData = await Availability.find({
@@ -49,11 +47,13 @@ exports.getAvailability = async (req, res) => {
     const reservationItem = await Availability.findOne({ _id: id })
       .populate("service")
       .populate("rating")
-      .populate("employer");
+      .populate({
+        path: "employer",
+        populate: {
+          path: "place",
+        },
+      });
 
-
-
-      
     res.status(200).json(reservationItem);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -109,12 +109,10 @@ exports.patchAvailabilityById = async (req, res) => {
       });
 
     if (resultDelete) {
-      return res
-        .status(201)
-        .json({
-          status: 201,
-          message: "Reservation is cancelled successfully",
-        });
+      return res.status(201).json({
+        status: 201,
+        message: "Reservation is cancelled successfully",
+      });
     }
 
     return res
