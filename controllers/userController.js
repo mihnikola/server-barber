@@ -534,10 +534,7 @@ export const sendOTP = async (req, res) => {
     await sendEmail({ receipients, subject, message })
       .then((result) => {
         if (result.status === 200) {
-          return res.status(200).json({
-            success: true,
-            status: 200,
-          });
+          return res.status(200).json({ success: true, status: 200 });
         }
         if (result.status === 500) {
           return res.status(500).json({
