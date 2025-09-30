@@ -11,6 +11,9 @@ const initialSchema = new mongoose.Schema(
     image: {
       type: String,
     },
+    lang:{
+      type: String
+    }
   },
   { timestamps: true }
 );
