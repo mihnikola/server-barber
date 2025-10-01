@@ -1,7 +1,6 @@
 const { default: axios } = require("axios");
 const Time = require("../models/Time");
 
-
 // Import Firestore Timestamp if you're working with Firebase SDK
 const { Readable } = require("stream"); // This imports the Readable stream correctly
 
@@ -37,11 +36,9 @@ const sendTaskToBackend = async (taskData) => {
     });
 };
 const convertToEndDateValue = (date, value) => {
-  console.log("date, duration", date, value);
   const d = new Date(date);
   d.setMinutes(d.getMinutes() + value);
 
-  console.log("xxxxxxxxxxxxxx", d.toISOString());
   return d.toISOString();
 };
 
@@ -89,8 +86,6 @@ const convertWithChooseService = (timeString, serviceDuration) => {
   ).padStart(2, "0")}`;
   return newTime;
 };
-
-
 
 const convertToTimeStamp = (dateStr, timeStr) => {
   // Parse the date string into a JavaScript Date object
@@ -256,7 +251,6 @@ function updateTimeToTenUTC(dateString, timeString) {
   const datePart = dateString.substring(0, 10);
   const desiredUTCTime = `${timeString}:00.000+00:00`;
   const newUTCDateString = `${datePart}T${desiredUTCTime}`;
-  console.log("newUTCDateString", newUTCDateString);
   return newUTCDateString;
 }
 
@@ -391,8 +385,83 @@ function convertToISO8601(dateInput) {
     return null;
   }
 }
+function canAddReservation(newReservation, reservations, criteria) {
+  const userId = newReservation.user.toString();
+  const newStart = new Date(newReservation.startDate);
+  const isSameDay = (d1, d2) =>
+    d1.getUTCFullYear() === d2.getUTCFullYear() &&
+    d1.getUTCMonth() === d2.getUTCMonth() &&
+    d1.getUTCDate() === d2.getUTCDate();
+
+  const getWeekNumber = (d) => {
+    const date = new Date(
+      Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())
+    );
+    const dayNum = date.getUTCDay() || 7;
+    date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    return Math.ceil(((date - yearStart) / 86400000 + 1) / 7);
+  };
+  let daily = 0;
+  let weekly = 0;
+  let monthly = 0;
+  let yearly = 0;
+
+  const newWeek = getWeekNumber(newStart);
+
+  reservations.forEach((res) => {
+    if (res.user.toString() !== userId) return;
+
+    const start = new Date(res.startDate);
+
+    if (isSameDay(start, newStart)) daily++;
+    if (
+      start.getUTCFullYear() === newStart.getUTCFullYear() &&
+      getWeekNumber(start) === newWeek
+    )
+      weekly++;
+    if (
+      start.getUTCFullYear() === newStart.getUTCFullYear() &&
+      start.getUTCMonth() === newStart.getUTCMonth()
+    )
+      monthly++;
+    if (start.getUTCFullYear() === newStart.getUTCFullYear()) yearly++;
+  });
+
+  if (daily >= criteria.counterDaily) {
+    return {
+      isValid: false,
+      errorMessage: "You cannot make more reservation this day",
+      errorStatus: 202,
+
+    };
+  }
+  if (weekly >= criteria.counterWeekly) {
+    return {
+      isValid: false,
+      errorStatus: 203,
+      errorMessage: "You cannot make more reservation this week",
+    };
+  }
+  if (monthly >= criteria.counterMonthly) {
+    return {
+      isValid: false,
+      errorStatus: 204,
+      errorMessage: "You cannot make more reservation this month",
+    };
+  }
+  if (yearly >= criteria.counterYearly) {
+    return {
+      isValid: false,
+      errorStatus: 205,
+      errorMessage: "You cannot make more reservation this year",
+    };
+  }
+  return { isValid: true };
+}
 
 module.exports = {
+  canAddReservation,
   updateTimeToTenUTC,
   convertToDateFormat,
   convertToISO8601,

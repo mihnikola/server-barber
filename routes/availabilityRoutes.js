@@ -5,7 +5,8 @@ const { authenticate } = require("../middleware/authMiddleware");
 const router = express.Router();
 
 // Create a new availability
-router.post("/", authenticate, availabilityController.createAvailability);
+// router.post("/", authenticate, availabilityController.createAvailability);
+router.post("/", availabilityController.createAvailability);
 
 // Get all availabilities
 router.get("/", authenticate, availabilityController.getAvailabilities);

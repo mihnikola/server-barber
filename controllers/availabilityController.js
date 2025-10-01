@@ -3,6 +3,7 @@ const {
   updateTimeToTenUTC,
   convertToTimeStamp,
   convertToEndDateValue,
+  canAddReservation,
 } = require("../helpers");
 const Availability = require("../models/Availability");
 const Token = require("../models/Token");
@@ -10,6 +11,7 @@ const Rating = require("../models/Rating");
 const jwt = require("jsonwebtoken");
 const { getSortReservationData } = require("../helpers/getTimeZone");
 const { LOCALIZATION_MAP } = require("../helpers/localizationMap");
+const CountReservation = require("../models/CountReservation");
 
 exports.getAvailabilities = async (req, res) => {
   const timeZone = req.headers["time-zone"];
@@ -59,13 +61,12 @@ exports.getAvailabilities = async (req, res) => {
   }
 };
 
-function updateServiceName(reservationItem,localization) {
+function updateServiceName(reservationItem, localization) {
   if (reservationItem.service) {
     reservationItem.service.name = localization[reservationItem.service.name];
   }
   return reservationItem;
 }
-
 
 exports.getAvailability = async (req, res) => {
   const { id } = req.params;
@@ -84,7 +85,7 @@ exports.getAvailability = async (req, res) => {
         },
       });
 
-    const updatedReservation = updateServiceName(reservationItem,localization);
+    const updatedReservation = updateServiceName(reservationItem, localization);
 
     res.status(200).json(updatedReservation);
   } catch (err) {
@@ -155,6 +156,7 @@ exports.patchAvailabilityById = async (req, res) => {
     res.status(500).send({ message: "Something went wrong" });
   }
 };
+
 exports.createAvailability = async (req, res) => {
   try {
     const { date, time, service, token, customer, employerId, description } =
@@ -167,9 +169,39 @@ exports.createAvailability = async (req, res) => {
     const customerId = customer !== "" ? null : tokenExpo.user;
     const employer = employerId === "" ? decoded.id : employerId;
 
+    const reservationData = await Availability.find({
+      user: customerId,
+      status: { $nin: [1] },
+    });
+
+    const counterData = await CountReservation.findOne();
+
     const timeStampValue = convertToTimeStamp(date?.dateString || date, time);
     const startDate = updateTimeToTenUTC(date?.dateString || date, time);
     const endDate = convertToEndDateValue(startDate, serviceDuration);
+
+    const newReservation = {
+      startDate,
+      endDate,
+      rating: null,
+      service: serviceId,
+      employer,
+      user: customerId,
+      description,
+      approved: 0,
+      status: 0,
+      type: 0,
+    };
+    const isValidResponse = canAddReservation(
+      newReservation,
+      reservationData,
+      counterData
+    );
+    const { isValid, errorMessage, errorStatus } = isValidResponse;
+
+    if (!isValid) {
+      return res.status(202).json({ status: errorStatus, message: errorMessage });
+    }
 
     const newAvailability = new Availability({
       startDate,
