@@ -10,6 +10,10 @@ const placeSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    active: {
+      type: Number,
+      required: true,
+    },
   },
   { timestamps: true }
 );

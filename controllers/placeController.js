@@ -2,7 +2,7 @@ const Place = require("../models/Place");
 
 exports.getPlaces = async (req, res) => {
   try {
-    const places = await Place.find();
+    const places = await Place.find({active: 1});
     const placesData = places.map((item) => {
       return {
         id: item._id,
@@ -16,6 +16,5 @@ exports.getPlaces = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-//useRegisterForm
-//useFetchReservation
+
 

@@ -1,10 +1,11 @@
 const Place = require("../models/Place");
 exports.createPlace = async (req, res) => {
   try {
-    const { address, mapLink } = req.body;
+    const { address, mapLink, active } = req.body;
     const newPlace = new Place({
       address,
       mapLink,
+      active,
     });
     await newPlace.save();
     res.status(201).json(newPlace);
@@ -31,6 +32,7 @@ exports.getPlaces = async (req, res) => {
         id: item._id,
         address: item.address,
         mapLink: item.mapLink,
+        active: item.active,
       };
     });
 
@@ -44,7 +46,11 @@ exports.putPlace = async (req, res) => {
   try {
     const { id } = req.params;
     const { address } = req.body;
-    const place = await Place.findByIdAndUpdate(id, { address }, { new: true });
+    const place = await Place.findByIdAndUpdate(
+      id,
+      { address, active },
+      { new: true }
+    );
     if (!place) {
       return res.status(404).send("Place not found");
     }
