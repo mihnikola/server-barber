@@ -30,6 +30,7 @@ const initialAdminRoutes = require("./routes/initialAdminRoutes");
 const aboutUsRoutes = require("./routes/aboutUsRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const countReservationRoutes = require("./routes/countReservationRoutes");
+const employersServicesRoutes = require("./routes/employersServicesRoutes");
 
 const { default: connectDB } = require("./connectDB");
 const User = require("./models/User");
@@ -67,7 +68,8 @@ app.use("/admin/places", placeAdminRoutes);
 
 app.use("/aboutUs", aboutUsRoutes);
 app.use("/review", reviewRoutes);
-app.use("/countReservation",countReservationRoutes);
+app.use("/countReservation", countReservationRoutes);
+app.use("/employersServices", employersServicesRoutes);
 
 const PORT = process.env.PORT || 3000;
 

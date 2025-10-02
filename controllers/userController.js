@@ -1,18 +1,11 @@
 import User from "../models/User.js"; // Assuming User model also uses ES modules
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import fs from "fs";
-import fetch from "node-fetch";
-
-import path from "path"; // Needed for path.extname in multer
 import { put } from "@vercel/blob";
-import multer from "multer";
 import otpGenerator from "otp-generator";
 import VerificationOtpCode from "../models/OtpModel.js"; // Assuming User model also uses ES modules
 import axios from "axios";
-import Employers from "../models/Employers.js";
-
-// 3. Unified controller
+import EmployersServices from "../models/EmployersServices.js";
 
 export const patchUser = async (req, res) => {
   try {
@@ -666,23 +659,28 @@ export const verifyOtpCode = async (req, res) => {
   }
 };
 
-/*
-EMPLOYERS GET
-*/
-
 export const getEmployers = async (req, res) => {
-  const id =
-    req.query["location[0][id]"] || req.query["location[location][id]"];
+  const placeId =
+    req.query["location[0][id]"] ||
+    req.query["location[location][id]"] ||
+    req.query["location[id]"];
+  const serviceId = req.query["service[serviceId]"];
   try {
-    const employers = await Employers.find({ place: id });
-    const employersData = employers.map((user) => {
+    const employersData = await EmployersServices.find({
+      services: serviceId,
+    }).populate("employers");
+    const employersx = employersData.filter(
+      (emp) => emp.employers.place.toHexString() === placeId
+    );
+
+    const employersx2 = employersx.map((user) => {
       return {
-        id: user._id,
-        name: user.name,
-        image: user.image,
+        id: user.employers._id,
+        name: user.employers.name,
+        image: user.employers.image,
       };
     });
-    res.status(200).json({ status: 200, data: employersData });
+    res.status(200).json({ status: 200, data: employersx2 });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
