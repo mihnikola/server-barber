@@ -12,6 +12,7 @@ const jwt = require("jsonwebtoken");
 const { getSortReservationData } = require("../helpers/getTimeZone");
 const { LOCALIZATION_MAP } = require("../helpers/localizationMap");
 const CountReservation = require("../models/CountReservation");
+const Review = require("../models/Review");
 
 exports.getAvailabilities = async (req, res) => {
   const timeZone = req.headers["time-zone"];
@@ -83,10 +84,19 @@ exports.getAvailability = async (req, res) => {
         populate: [{ path: "place" }, { path: "seniority" }],
       });
 
-
+    const reviewsCount = await Review.countDocuments({
+      employer: reservationItem.employer._id,
+    });
     const updatedReservation = updateServiceName(reservationItem, localization);
+    const updatedReservationItem = {
+      ...updatedReservation.toObject(),
+      employer: {
+        ...updatedReservation.employer.toObject(),
+        ratingCount: reviewsCount,
+      },
+    };
 
-    res.status(200).json(updatedReservation);
+    res.status(200).json(updatedReservationItem);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
