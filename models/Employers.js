@@ -40,6 +40,10 @@ const employersSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Place",
     },
+    seniority: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Seniority",
+    },
   },
   { timestamps: true }
 );

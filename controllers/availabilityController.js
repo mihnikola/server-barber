@@ -80,10 +80,10 @@ exports.getAvailability = async (req, res) => {
       .populate("rating")
       .populate({
         path: "employer",
-        populate: {
-          path: "place",
-        },
+        populate: [{ path: "place" }, { path: "seniority" }],
       });
+
+      console.log("reservationItem",reservationItem)
 
     const updatedReservation = updateServiceName(reservationItem, localization);
 
@@ -200,7 +200,9 @@ exports.createAvailability = async (req, res) => {
     const { isValid, errorMessage, errorStatus } = isValidResponse;
 
     if (!isValid) {
-      return res.status(202).json({ status: errorStatus, message: errorMessage });
+      return res
+        .status(202)
+        .json({ status: errorStatus, message: errorMessage });
     }
 
     const newAvailability = new Availability({

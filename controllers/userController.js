@@ -668,7 +668,17 @@ export const getEmployers = async (req, res) => {
   try {
     const employersData = await EmployersServices.find({
       services: serviceId,
-    }).populate("employers");
+    })
+      .populate({
+        path: "employers",
+        populate: {
+          path: "seniority",
+        },
+      });
+    //ovde
+    console.log("oveee",employersData);
+
+
     const employersx = employersData.filter(
       (emp) => emp.employers.place.toHexString() === placeId
     );
@@ -678,6 +688,7 @@ export const getEmployers = async (req, res) => {
         id: user.employers._id,
         name: user.employers.name,
         image: user.employers.image,
+        seniority: user.employers?.seniority?.title
       };
     });
     res.status(200).json({ status: 200, data: employersx2 });
