@@ -8,6 +8,10 @@ const ratingsSchema = new mongoose.Schema(
     description: {
       type: String,
     },
+    employer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employers",
+    },
   },
   { timestamps: true }
 );

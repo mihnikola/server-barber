@@ -6,6 +6,7 @@ import otpGenerator from "otp-generator";
 import VerificationOtpCode from "../models/OtpModel.js"; // Assuming User model also uses ES modules
 import axios from "axios";
 import EmployersServices from "../models/EmployersServices.js";
+import Rating from "../models/Rating.js";
 
 export const patchUser = async (req, res) => {
   try {
@@ -659,39 +660,94 @@ export const verifyOtpCode = async (req, res) => {
   }
 };
 
+// export const getEmployers = async (req, res) => {
+//   const placeId =
+//     req.query["location[0][id]"] ||
+//     req.query["location[location][id]"] ||
+//     req.query["location[id]"];
+//   const serviceId = req.query["service[serviceId]"];
+//   try {
+
+//     const employersData = await EmployersServices.find({
+//       services: serviceId,
+//     }).populate({
+//       path: "employers",
+//       populate: {
+//         path: "seniority",
+//       },
+//     });
+
+//     const employersx = employersData.filter(
+//       (emp) => emp.employers.place.toHexString() === placeId
+//     );
+
+//     const employersx2 = employersx.map((user) => {
+//       return {
+//         id: user.employers._id,
+//         name: user.employers.name,
+//         image: user.employers.image,
+//         seniority: user.employers?.seniority?.title,
+//       };
+//     });
+
+//     res.status(200).json({ status: 200, data: employersx2 });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// };
+
 export const getEmployers = async (req, res) => {
   const placeId =
     req.query["location[0][id]"] ||
     req.query["location[location][id]"] ||
     req.query["location[id]"];
   const serviceId = req.query["service[serviceId]"];
+
   try {
+    // 1. Nađi sve povezane employerse za dati servis
     const employersData = await EmployersServices.find({
       services: serviceId,
-    })
-      .populate({
-        path: "employers",
-        populate: {
-          path: "seniority",
-        },
-      });
-    //ovde
-    console.log("oveee",employersData);
-
-
-    const employersx = employersData.filter(
-      (emp) => emp.employers.place.toHexString() === placeId
-    );
-
-    const employersx2 = employersx.map((user) => {
-      return {
-        id: user.employers._id,
-        name: user.employers.name,
-        image: user.employers.image,
-        seniority: user.employers?.seniority?.title
-      };
+    }).populate({
+      path: "employers",
+      populate: {
+        path: "seniority",
+      },
     });
-    res.status(200).json({ status: 200, data: employersx2 });
+
+    // 2. Izvuci sve poslodavce iz svih veza
+    const allEmployers = employersData.flatMap((item) => item.employers || []);
+
+    // 3. Filtriraj po placeId
+    const filteredEmployers = allEmployers.filter((emp) => {
+      return emp.place?.toString() === placeId;
+    });
+
+    // 4. Pripremi listu employerId-jeva
+    const employerIds = filteredEmployers.map((emp) => emp._id);
+
+    // 5. Dobavi broj ocjena po employeru (grupisano)
+    const ratings = await Rating.aggregate([
+      { $match: { employer: { $in: employerIds } } },
+      { $group: { _id: "$employer", count: { $sum: 1 } } },
+    ]);
+
+    // 6. Pretvori u mapu: employerId => ratingCount
+    const ratingCountMap = {};
+    ratings.forEach((r) => {
+      ratingCountMap[r._id.toString()] = r.count;
+    });
+
+    // 7. Mapiraj za frontend
+    const result = filteredEmployers.map((user) => ({
+      id: user._id,
+      name: user.name,
+      image: user.image,
+      seniority: user?.seniority?.title || null,
+      ratingCount: ratingCountMap[user._id.toString()] || 0,
+    }));
+
+    console.log("result",result)
+    res.status(200).json({ status: 200, data: result });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

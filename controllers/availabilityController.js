@@ -83,7 +83,6 @@ exports.getAvailability = async (req, res) => {
         populate: [{ path: "place" }, { path: "seniority" }],
       });
 
-      console.log("reservationItem",reservationItem)
 
     const updatedReservation = updateServiceName(reservationItem, localization);
 
