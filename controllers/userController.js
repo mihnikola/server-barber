@@ -743,7 +743,7 @@ export const getEmployers = async (req, res) => {
       name: user.name,
       image: user.image,
       seniority: user?.seniority?.title || null,
-      ratingCount: ratingCountMap[user._id.toString()] || 0,
+      ratingCount: ratingCountMap[user._id.toString()] || 10,
     }));
 
     console.log("result",result)
