@@ -12,8 +12,9 @@ const jwt = require("jsonwebtoken");
 const { getSortReservationData } = require("../helpers/getTimeZone");
 const { LOCALIZATION_MAP } = require("../helpers/localizationMap");
 const CountReservation = require("../models/CountReservation");
-const Review = require("../models/Review");
 
+
+//promene validne
 exports.getAvailabilities = async (req, res) => {
   const timeZone = req.headers["time-zone"];
   const token = req.header("Authorization")
@@ -84,17 +85,75 @@ exports.getAvailability = async (req, res) => {
         populate: [{ path: "place" }, { path: "seniority" }],
       });
 
-    const reviewsCount = await Review.countDocuments({
-      employer: reservationItem.employer._id,
+    const filteredEmployers = [reservationItem.employer]; // <- sada je definisan
+    const employerIds = [reservationItem.employer._id]; // koristi se u agregaciji
+
+    const aggregatedData = await Availability.aggregate([
+      {
+        $match: {
+          employer: { $in: employerIds }, // Samo poslodavci koji nas zanimaju
+        },
+      },
+      {
+        $lookup: {
+          from: "ratings", // Poveži sa kolekcijom "ratings"
+          localField: "rating", // Polje iz Availability
+          foreignField: "_id", // Povezivanje sa "ratings"
+          as: "ratingInfo", // Novi array koji sadrži rating info
+        },
+      },
+      {
+        $unwind: {
+          path: "$ratingInfo",
+          preserveNullAndEmptyArrays: true, // Ako nema ocenu, zadrži dokument
+        },
+      },
+      {
+        $group: {
+          _id: "$employer", // Grupisanje po employer ID
+          averageRating: { $avg: "$ratingInfo.rate" }, // Prosečna ocena
+          userSet: { $addToSet: "$user" }, // Jedinstveni korisnici
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          averageRating: 1,
+          userCount: { $size: "$userSet" }, // Broj korisnika
+        },
+      },
+    ]);
+
+    // 3. Napravi mapu za brz pristup statistikama po employerId
+    const aggregationMap = {};
+    aggregatedData.forEach((item) => {
+      aggregationMap[item._id.toString()] = {
+        averageRating: item.averageRating || null,
+        userCount: item.userCount || 0,
+      };
     });
+
+    // 4. Mapiraj finalni rezultat koji se šalje frontend-u
+    const result = filteredEmployers.map((user) => {
+      const stats = aggregationMap[user._id.toString()] || {};
+      return {
+        id: user._id,
+        name: user.name,
+        image: user.image,
+        seniority: user?.seniority?.title || null,
+        averageRating: stats.averageRating || null,
+        userCount: stats.userCount || 0,
+      };
+    });
+
     const updatedReservation = updateServiceName(reservationItem, localization);
     const updatedReservationItem = {
       ...updatedReservation.toObject(),
-      employer: {
-        ...updatedReservation.employer.toObject(),
-        ratingCount: reviewsCount,
-      },
+      employer: result[0],
+      place: reservationItem.employer.place.address
     };
+
+    console.log("updatedReservationItem",updatedReservationItem)
 
     res.status(200).json(updatedReservationItem);
   } catch (err) {

@@ -7,6 +7,7 @@ import VerificationOtpCode from "../models/OtpModel.js"; // Assuming User model 
 import axios from "axios";
 import EmployersServices from "../models/EmployersServices.js";
 import Rating from "../models/Rating.js";
+import Availability from "../models/Availability.js";
 
 export const patchUser = async (req, res) => {
   try {
@@ -660,42 +661,6 @@ export const verifyOtpCode = async (req, res) => {
   }
 };
 
-// export const getEmployers = async (req, res) => {
-//   const placeId =
-//     req.query["location[0][id]"] ||
-//     req.query["location[location][id]"] ||
-//     req.query["location[id]"];
-//   const serviceId = req.query["service[serviceId]"];
-//   try {
-
-//     const employersData = await EmployersServices.find({
-//       services: serviceId,
-//     }).populate({
-//       path: "employers",
-//       populate: {
-//         path: "seniority",
-//       },
-//     });
-
-//     const employersx = employersData.filter(
-//       (emp) => emp.employers.place.toHexString() === placeId
-//     );
-
-//     const employersx2 = employersx.map((user) => {
-//       return {
-//         id: user.employers._id,
-//         name: user.employers.name,
-//         image: user.employers.image,
-//         seniority: user.employers?.seniority?.title,
-//       };
-//     });
-
-//     res.status(200).json({ status: 200, data: employersx2 });
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// };
-
 export const getEmployers = async (req, res) => {
   const placeId =
     req.query["location[0][id]"] ||
@@ -704,49 +669,84 @@ export const getEmployers = async (req, res) => {
   const serviceId = req.query["service[serviceId]"];
 
   try {
-    // 1. Nađi sve povezane employerse za dati servis
-    const employersData = await EmployersServices.find({
+    const employerServiceLinks = await EmployersServices.find({
       services: serviceId,
     }).populate({
       path: "employers",
-      populate: {
-        path: "seniority",
-      },
+      populate: { path: "seniority" },
     });
 
-    // 2. Izvuci sve poslodavce iz svih veza
-    const allEmployers = employersData.flatMap((item) => item.employers || []);
+    // 1. Ekstrahuj sve employere iz veza
+    const allEmployers = employerServiceLinks.flatMap(
+      (item) => item.employers || []
+    );
 
-    // 3. Filtriraj po placeId
-    const filteredEmployers = allEmployers.filter((emp) => {
-      return emp.place?.toString() === placeId;
-    });
+    // 2. Filtriraj po placeId
+    const filteredEmployers = allEmployers.filter(
+      (emp) => emp.place?.toString() === placeId
+    );
 
-    // 4. Pripremi listu employerId-jeva
+    // 3. Pripremi listu employerId-jeva
     const employerIds = filteredEmployers.map((emp) => emp._id);
 
-    // 5. Dobavi broj ocjena po employeru (grupisano)
-    const ratings = await Rating.aggregate([
-      { $match: { employer: { $in: employerIds } } },
-      { $group: { _id: "$employer", count: { $sum: 1 } } },
+    // 4. Dobavi ocene i broj korisnika za te employere preko Availability
+    const aggregatedData = await Availability.aggregate([
+      {
+        $match: {
+          employer: { $in: employerIds },
+        },
+      },
+      {
+        $lookup: {
+          from: "ratings",
+          localField: "rating",
+          foreignField: "_id",
+          as: "ratingInfo",
+        },
+      },
+      {
+        $unwind: {
+          path: "$ratingInfo",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $group: {
+          _id: "$employer",
+          averageRating: { $avg: "$ratingInfo.rate" },
+          userSet: { $addToSet: "$user" },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          averageRating: 1,
+          userCount: { $size: "$userSet" },
+        },
+      },
     ]);
 
-    // 6. Pretvori u mapu: employerId => ratingCount
-    const ratingCountMap = {};
-    ratings.forEach((r) => {
-      ratingCountMap[r._id.toString()] = r.count;
+    // 5. Pretvori u mapu za lakši pristup po employerId
+    const aggregationMap = {};
+    aggregatedData.forEach((item) => {
+      aggregationMap[item._id.toString()] = {
+        averageRating: item.averageRating || null,
+        userCount: item.userCount || 0,
+      };
     });
 
-    // 7. Mapiraj za frontend
-    const result = filteredEmployers.map((user) => ({
-      id: user._id,
-      name: user.name,
-      image: user.image,
-      seniority: user?.seniority?.title || null,
-      ratingCount: ratingCountMap[user._id.toString()] || 10,
-    }));
-
-    console.log("result",result)
+    // 6. Mapiraj finalni rezultat za frontend
+    const result = filteredEmployers.map((user) => {
+      const stats = aggregationMap[user._id.toString()] || {};
+      return {
+        id: user._id,
+        name: user.name,
+        image: user.image,
+        seniority: user?.seniority?.title || null,
+        averageRating: stats.averageRating || null,
+        userCount: stats.userCount || 0,
+      };
+    });
     res.status(200).json({ status: 200, data: result });
   } catch (err) {
     res.status(500).json({ error: err.message });
