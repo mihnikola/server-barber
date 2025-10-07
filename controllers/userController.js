@@ -352,7 +352,7 @@ export const loginUser = async (req, res) => {
 //Login & Create User
 export const loginViaGoogle = async (req, res) => {
   try {
-    const { user } = req.body;
+    const { user, expoToken } = req.body;
 
     const { email, name, id, photo } = user;
 
@@ -375,6 +375,7 @@ export const loginViaGoogle = async (req, res) => {
 
     const userDataToken = {
       id: userData._id.toHexString(),
+      token: expoToken,
       email: userData.email,
     };
 
@@ -662,15 +663,15 @@ export const verifyOtpCode = async (req, res) => {
 };
 
 export const getEmployers = async (req, res) => {
-  const placeId =
-    req.query["location[0][id]"] ||
-    req.query["location[location][id]"] ||
-    req.query["location[id]"];
-  const serviceId = req.query["service[serviceId]"];
+  // const placeId =
+  //   req.query["location[0][id]"] ||
+  //   req.query["location[location][id]"] ||
+  //   req.query["location[id]"];
+  // const serviceId = req.query["service[serviceId]"];
 
   try {
     const employerServiceLinks = await EmployersServices.find({
-      services: serviceId,
+      services: "67c5d730dd1653f652ef7769",
     }).populate({
       path: "employers",
       populate: { path: "seniority" },
@@ -683,7 +684,7 @@ export const getEmployers = async (req, res) => {
 
     // 2. Filtriraj po placeId
     const filteredEmployers = allEmployers.filter(
-      (emp) => emp.place?.toString() === placeId
+      (emp) => emp.place?.toString() === "68bebf3420a3a6f22c697435"
     );
 
     // 3. Pripremi listu employerId-jeva
@@ -725,12 +726,11 @@ export const getEmployers = async (req, res) => {
         },
       },
     ]);
-
     // 5. Pretvori u mapu za lakši pristup po employerId
     const aggregationMap = {};
     aggregatedData.forEach((item) => {
       aggregationMap[item._id.toString()] = {
-        averageRating: item.averageRating || null,
+        averageRating: item.averageRating || 0,
         userCount: item.userCount || 0,
       };
     });
@@ -743,8 +743,8 @@ export const getEmployers = async (req, res) => {
         name: user.name,
         image: user.image,
         seniority: user?.seniority?.title || null,
-        averageRating: stats.averageRating || null,
-        userCount: stats.userCount || 0,
+        averageRating: stats.averageRating || 0,
+        userCount: stats.averageRating !== 0 ? stats.userCount : 0,
       };
     });
     res.status(200).json({ status: 200, data: result });

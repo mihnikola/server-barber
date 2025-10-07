@@ -23,7 +23,7 @@ exports.sendNotification = async (req, res) => {
     body: JSON.stringify(message),
   })
     .then((solve) => {
-      console.log("solve++", solve);
+      console.log("solve++",solve)
       if (solve.status === 400) {
         res
           .status(500)
@@ -33,7 +33,7 @@ exports.sendNotification = async (req, res) => {
       }
     })
     .catch((err) => {
-      console.log("solve++", err);
+      console.log("solve++",err)
 
       res.status(500).send("Notification cannot successfully");
     });
@@ -52,12 +52,14 @@ async function updateTokenFirebase(userId, token) {
     });
 }
 
+
+
 exports.saveToken = async (req, res) => {
   const { tokenExpo, tokenUser } = req.body;
 
   try {
     const userData = await Token.findOne({ user: tokenUser });
-    console.log("tokenExpo", tokenExpo);
+    console.log("tokenExpo",tokenExpo)
     if (userData) {
       await Token.findOneAndUpdate(
         { user: tokenUser },
