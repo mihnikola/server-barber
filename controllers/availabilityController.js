@@ -128,7 +128,7 @@ exports.getAvailability = async (req, res) => {
     const aggregationMap = {};
     aggregatedData.forEach((item) => {
       aggregationMap[item._id.toString()] = {
-        averageRating: item.averageRating || null,
+        averageRating: item.averageRating || 0,
         userCount: item.userCount || 0,
       };
     });
@@ -141,8 +141,8 @@ exports.getAvailability = async (req, res) => {
         name: user.name,
         image: user.image,
         seniority: user?.seniority?.title || null,
-        averageRating: stats.averageRating || null,
-        userCount: stats.userCount || 0,
+        averageRating: stats.averageRating || 0,
+        userCount: stats.averageRating !== 0 ? stats.userCount : 0,
       };
     });
 
@@ -153,7 +153,6 @@ exports.getAvailability = async (req, res) => {
       place: reservationItem.employer.place.address
     };
 
-    console.log("updatedReservationItem",updatedReservationItem)
 
     res.status(200).json(updatedReservationItem);
   } catch (err) {
