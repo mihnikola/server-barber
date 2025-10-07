@@ -663,15 +663,15 @@ export const verifyOtpCode = async (req, res) => {
 };
 
 export const getEmployers = async (req, res) => {
-  // const placeId =
-  //   req.query["location[0][id]"] ||
-  //   req.query["location[location][id]"] ||
-  //   req.query["location[id]"];
-  // const serviceId = req.query["service[serviceId]"];
+  const placeId =
+    req.query["location[0][id]"] ||
+    req.query["location[location][id]"] ||
+    req.query["location[id]"];
+  const serviceId = req.query["service[serviceId]"];
 
   try {
     const employerServiceLinks = await EmployersServices.find({
-      services: "67c5d730dd1653f652ef7769",
+      services: serviceId,
     }).populate({
       path: "employers",
       populate: { path: "seniority" },
@@ -684,7 +684,7 @@ export const getEmployers = async (req, res) => {
 
     // 2. Filtriraj po placeId
     const filteredEmployers = allEmployers.filter(
-      (emp) => emp.place?.toString() === "68bebf3420a3a6f22c697435"
+      (emp) => emp.place?.toString() === placeId
     );
 
     // 3. Pripremi listu employerId-jeva
