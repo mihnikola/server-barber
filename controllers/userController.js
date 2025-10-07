@@ -712,6 +712,11 @@ export const getEmployers = async (req, res) => {
         },
       },
       {
+        $match: {
+          ratingInfo: { $ne: null }, // <-- Ovo je dodatak
+        },
+      },
+      {
         $group: {
           _id: "$employer",
           averageRating: { $avg: "$ratingInfo.rate" },
@@ -726,6 +731,7 @@ export const getEmployers = async (req, res) => {
         },
       },
     ]);
+    console.log("umaga", aggregatedData);
     // 5. Pretvori u mapu za lakši pristup po employerId
     const aggregationMap = {};
     aggregatedData.forEach((item) => {

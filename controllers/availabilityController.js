@@ -88,41 +88,46 @@ exports.getAvailability = async (req, res) => {
     const filteredEmployers = [reservationItem.employer]; // <- sada je definisan
     const employerIds = [reservationItem.employer._id]; // koristi se u agregaciji
 
-    const aggregatedData = await Availability.aggregate([
-      {
-        $match: {
-          employer: { $in: employerIds }, // Samo poslodavci koji nas zanimaju
-        },
-      },
-      {
-        $lookup: {
-          from: "ratings", // Poveži sa kolekcijom "ratings"
-          localField: "rating", // Polje iz Availability
-          foreignField: "_id", // Povezivanje sa "ratings"
-          as: "ratingInfo", // Novi array koji sadrži rating info
-        },
-      },
-      {
-        $unwind: {
-          path: "$ratingInfo",
-          preserveNullAndEmptyArrays: true, // Ako nema ocenu, zadrži dokument
-        },
-      },
-      {
-        $group: {
-          _id: "$employer", // Grupisanje po employer ID
-          averageRating: { $avg: "$ratingInfo.rate" }, // Prosečna ocena
-          userSet: { $addToSet: "$user" }, // Jedinstveni korisnici
-        },
-      },
-      {
-        $project: {
-          _id: 1,
-          averageRating: 1,
-          userCount: { $size: "$userSet" }, // Broj korisnika
-        },
-      },
-    ]);
+   const aggregatedData = await Availability.aggregate([
+         {
+           $match: {
+             employer: { $in: employerIds },
+           },
+         },
+         {
+           $lookup: {
+             from: "ratings",
+             localField: "rating",
+             foreignField: "_id",
+             as: "ratingInfo",
+           },
+         },
+         {
+           $unwind: {
+             path: "$ratingInfo",
+             preserveNullAndEmptyArrays: true,
+           },
+         },
+         {
+           $match: {
+             ratingInfo: { $ne: null }, // <-- Ovo je dodatak
+           },
+         },
+         {
+           $group: {
+             _id: "$employer",
+             averageRating: { $avg: "$ratingInfo.rate" },
+             userSet: { $addToSet: "$user" },
+           },
+         },
+         {
+           $project: {
+             _id: 1,
+             averageRating: 1,
+             userCount: { $size: "$userSet" },
+           },
+         },
+       ]);
 
     // 3. Napravi mapu za brz pristup statistikama po employerId
     const aggregationMap = {};
