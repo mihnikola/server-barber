@@ -28,22 +28,22 @@ async function deleteAppointmentsRequest(reservationData) {
 }
 
 exports.getAvailabilities = async (req, res) => {
-  const token = req.header("Authorization")
-    ? req.header("Authorization").split(" ")[1]
-    : req.body.headers.Authorization
-    ? req.body.headers.Authorization
-    : req.get("authorization");
-  if (!token) return res.status(403).send("Access denied");
+  // const token = req.header("Authorization")
+  //   ? req.header("Authorization").split(" ")[1]
+  //   : req.body.headers.Authorization
+  //   ? req.body.headers.Authorization
+  //   : req.get("authorization");
+  // if (!token) return res.status(403).send("Access denied");
 
   try {
-    const { dateValue } = req.body;
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    const  dateValue  = req.query["dateValue"];
+    // const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
     const rangeStart = new Date(dateValue + "T00:00:00.000Z").toISOString();
     const rangeEnd = new Date(dateValue + "T23:00:00.000Z").toISOString();
 
     const availabilitiesData = await Availability.find({
-      employer: decoded.id,
+      employer: "67b325188505dffa6070ccbd",
       startDate: { $gt: rangeStart },
       endDate: { $lt: rangeEnd },
       status: { $nin: [1] },
@@ -51,6 +51,7 @@ exports.getAvailabilities = async (req, res) => {
       .sort({ date: 1 })
       .populate("service")
       .populate("user");
+
 
     res.status(200).json(availabilitiesData);
   } catch (err) {
