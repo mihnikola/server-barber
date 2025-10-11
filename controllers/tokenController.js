@@ -1,42 +1,79 @@
 const { default: axios } = require("axios");
 const Token = require("../models/Token");
+const admin = require("firebase-admin");
+// const serviceAccount = require("../helpers/barberappointmentapp-85deb-firebase-adminsdk-fbsvc-addb7bb47c.json");
+require("dotenv").config(); // učitava .env fajl
+
 
 // API route to send token
-
+admin.initializeApp({
+  credential: admin.credential.cert({
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+  }),
+});
 exports.sendNotification = async (req, res) => {
-  const { token, title, content, data } = req.body;
+  const { deviceToken, title, content, data } = req.body;
 
-  const message = {
-    to: token,
-    sound: "default",
-    title: title,
-    body: content,
-    data,
-  };
-  await fetch("https://exp.host/--/api/v2/push/send", {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Accept-encoding": "gzip, deflate",
-      "Content-Type": "application/json",
+  // const message = {
+  //   to: token,
+  //   sound: "default",
+  //   title: title,
+  //   body: content,
+  //   data,
+  // };
+  // await fetch("https://exp.host/--/api/v2/push/send", {
+  //   method: "POST",
+  //   headers: {
+  //     Accept: "application/json",
+  //     "Accept-encoding": "gzip, deflate",
+  //     "Content-Type": "application/json",
+  //   },
+  //   body: JSON.stringify(message),
+  // })
+  //   .then((solve) => {
+  //     console.log("solve++", solve);
+  //     if (solve.status === 400) {
+  //       res
+  //         .status(500)
+  //         .send(`${solve.statusText} Notification cannot successfully`);
+  //     } else {
+  //       res.status(200).send("Notification sent successfully");
+  //     }
+  //   })
+  //   .catch((err) => {
+  //     console.log("solve++", err);
+
+  //     res.status(500).send("Notification cannot successfully");
+  //   });
+   const message = {
+    token: deviceToken, // expo token koji si dobio
+    notification: {
+      title,
+      body:content,
     },
-    body: JSON.stringify(message),
-  })
-    .then((solve) => {
-      console.log("solve++",solve)
-      if (solve.status === 400) {
-        res
-          .status(500)
-          .send(`${solve.statusText} Notification cannot successfully`);
-      } else {
-        res.status(200).send("Notification sent successfully");
-      }
-    })
-    .catch((err) => {
-      console.log("solve++",err)
+    data, // dodatni payload (optional)
+    android: {
+      priority: "high",
+    },
+    apns: {
+      payload: {
+        aps: {
+          sound: "default",
+        },
+      },
+    },
+  };
 
-      res.status(500).send("Notification cannot successfully");
-    });
+  try {
+    const response = await admin.messaging().send(message);
+    console.log("Successfully sent message:", response);
+    return response;
+  } catch (error) {
+    console.error("Error sending message:", error);
+    throw error;
+  }
 };
 // API route to save token
 async function updateTokenFirebase(userId, token) {
@@ -52,14 +89,12 @@ async function updateTokenFirebase(userId, token) {
     });
 }
 
-
-
 exports.saveToken = async (req, res) => {
   const { tokenExpo, tokenUser } = req.body;
 
   try {
     const userData = await Token.findOne({ user: tokenUser });
-    console.log("tokenExpo",tokenExpo)
+    console.log("tokenExpo", tokenExpo);
     if (userData) {
       await Token.findOneAndUpdate(
         { user: tokenUser },
