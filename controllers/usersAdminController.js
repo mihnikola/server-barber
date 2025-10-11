@@ -4,7 +4,6 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import axios from "axios";
 
-
 async function logoutUserFromFirebase(userId) {
   const functionUrl =
     "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/logoutUserFromFirebase";
@@ -157,9 +156,8 @@ export const getClient = async (req, res) => {
 };
 
 export const softDeleteUser = async (req, res) => {
-
   try {
-    const userId = req.params.id; 
+    const userId = req.params.id;
     const deletedUser = await User.findByIdAndUpdate(
       userId,
       { deletedAt: new Date() },
@@ -269,40 +267,46 @@ export const logoutEmployer = async (req, res) => {
 //LOGIN USER ADMIN BEGIN
 export const loginEmployer = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, expoToken } = req.body;
 
-    const user = await Employers.findOne({ email });
-
-    if (!user) {
-      return res.status(400).json({ message: "Invalid email or password" });
+    const employer = await Employers.findOne({ email });
+    if (!employer) {
+      return res
+        .status(200)
+        .json({ status: 304, message: "Invalid email or password" });
     }
 
-    const isPasswordMatch = await bcrypt.compare(password, user.password);
+    const isPasswordMatch = await bcrypt.compare(password, employer.password);
 
     if (!isPasswordMatch) {
       return res.status(400).json({ message: "Not match password" });
     }
+    if (!employer.isVerified) {
+      return res.status(202).json({
+        status: 606,
+        message:
+          "Your account is not verified yet. Verification code will be sent to your email.",
+      });
+    }
 
-    const userData = {
-      id: user._id,
-      role: user.role,
-      username: user.username,
+    const employerData = {
+      id: employer._id.toHexString(),
+      token: expoToken,
+      email: employer.email,
     };
 
-    const token = jwt.sign(userData, process.env.JWT_SECRET_KEY, {
+    const token = jwt.sign(employerData, process.env.JWT_SECRET_KEY, {
       expiresIn: "10000000m",
     });
-    res.status(200).json({ status: 200, data: token });
+    res.status(200).json({ status: 200, token, userId: employer._id.toHexString() });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 //LOGIN USER ADMIN END
 
-
 // Create a new user
 export const createEmployer = async (req, res) => {
-  
   const { name, email, password } = req.body;
 
   if (!name || !email || !password) {
@@ -316,7 +320,9 @@ export const createEmployer = async (req, res) => {
     const existingUser = await Employers.findOne({ email });
 
     if (existingUser) {
-      return res.status(202).json({ status: 202, message: "Email already exists." });
+      return res
+        .status(202)
+        .json({ status: 202, message: "Email already exists." });
     }
 
     const salt = await bcrypt.genSalt(10);
