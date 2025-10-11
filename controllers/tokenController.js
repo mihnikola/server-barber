@@ -13,7 +13,7 @@ admin.initializeApp({
   }),
 });
 exports.sendNotification = async (req, res) => {
-  const { deviceToken, title, content, data } = req.body;
+  const { token, title, content, data } = req.body;
 
   // const message = {
   //   to: token,
@@ -47,7 +47,7 @@ exports.sendNotification = async (req, res) => {
   //     res.status(500).send("Notification cannot successfully");
   //   });
   const message = {
-    token: deviceToken, // expo token koji si dobio
+    token, // expo token koji si dobio
     notification: {
       title,
       body: content,
