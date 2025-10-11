@@ -4,12 +4,11 @@ const admin = require("firebase-admin");
 // const serviceAccount = require("../helpers/barberappointmentapp-85deb-firebase-adminsdk-fbsvc-addb7bb47c.json");
 require("dotenv").config(); // učitava .env fajl
 
-
 // API route to send token
 admin.initializeApp({
   credential: admin.credential.cert({
     projectId: process.env.FIREBASE_PROJECT_ID,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
   }),
 });
@@ -47,11 +46,11 @@ exports.sendNotification = async (req, res) => {
 
   //     res.status(500).send("Notification cannot successfully");
   //   });
-   const message = {
+  const message = {
     token: deviceToken, // expo token koji si dobio
     notification: {
       title,
-      body:content,
+      body: content,
     },
     data, // dodatni payload (optional)
     android: {
@@ -69,10 +68,10 @@ exports.sendNotification = async (req, res) => {
   try {
     const response = await admin.messaging().send(message);
     console.log("Successfully sent message:", response);
-    return response;
+    res.status(200).send("Notification sent successfully");
   } catch (error) {
     console.error("Error sending message:", error);
-    throw error;
+    res.status(500).send("Notification cannot successfully");
   }
 };
 // API route to save token
