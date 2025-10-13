@@ -19,108 +19,113 @@ async function logoutUserFromFirebase(userId) {
 //CLIENTS TAB BEGIN
 export const getClients = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1; // Default to page 1 if not specified
-    const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page
-    const skip = (page - 1) * limit;
+    // const page = parseInt(req.query.page) || 1; // Default to page 1 if not specified
+    // const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page
+    // const skip = (page - 1) * limit;
     const currentDate = new Date();
 
-    const result = await User.aggregate([
-      // Step 1: Filter verified users
-      {
-        $match: {
-          isVerified: true,
-          deletedAt: null,
+const result = await User.aggregate([
+  // 1. Samo verifikovani korisnici
+  {
+    $match: {
+      isVerified: true,
+      deletedAt: null,
+    },
+  },
+  // 2. Poveži sa availabilities
+  {
+    $lookup: {
+      from: "availabilities",
+      localField: "_id",
+      foreignField: "user",
+      as: "availabilities",
+    },
+  },
+  // 3. Razbij array
+  {
+    $unwind: {
+      path: "$availabilities",
+      preserveNullAndEmptyArrays: false, // Uklanjamo korisnike bez termina
+    },
+  },
+  // 4. Filtriraj samo prošle termine
+  {
+    $match: {
+      "availabilities.status": 0,
+    },
+  },
+  // 5. Poveži sa services (da dobiješ cenu)
+  {
+    $lookup: {
+      from: "services",
+      localField: "availabilities.service",
+      foreignField: "_id",
+      as: "serviceDetails",
+    },
+  },
+  // 6. Uzmi samo jednu cenu
+  {
+    $addFields: {
+      servicePrice: { $first: "$serviceDetails.price" },
+    },
+  },
+  // 7. Grupisi po korisniku
+  {
+    $group: {
+      _id: "$_id",
+      name: { $first: "$name" },
+      phoneNumber: { $first: "$phoneNumber" },
+      image: { $first: "$image" },
+      approvedCount: {
+        $sum: {
+          $cond: [{ $eq: ["$availabilities.approved", 0] }, 1, 0],
         },
       },
-      // Step 2: Join users with their reservations
-      {
-        $lookup: {
-          from: "reservations",
-          localField: "_id",
-          foreignField: "user",
-          as: "reservations",
+      skippedCount: {
+        $sum: {
+          $cond: [{ $eq: ["$availabilities.approved", 1] }, 1, 0],
         },
       },
-      // Step 3: Deconstruct the reservations array
-      {
-        $unwind: {
-          path: "$reservations",
-          preserveNullAndEmptyArrays: true,
+      
+      totalRevenue: {
+        $sum: {
+          $cond: [
+            { $eq: ["$availabilities.approved", 0] },
+            "$servicePrice",
+            0,
+          ],
         },
       },
-      // Step 4: Filter reservations based on status and date
-      {
-        $match: {
-          "reservations.status": 0,
-          "reservations.date": { $lt: currentDate },
-        },
-      },
-      // Step 5: Join with the services collection to get the price
-      {
-        $lookup: {
-          from: "services",
-          localField: "reservations.service",
-          foreignField: "_id",
-          as: "serviceDetails",
-        },
-      },
-      // Step 6: Add servicePrice field
-      {
-        $addFields: {
-          servicePrice: { $first: "$serviceDetails.price" },
-        },
-      },
-      // Step 7: Group by user ID
-      {
-        $group: {
-          _id: "$_id",
-          name: { $first: "$name" },
-          image: { $first: "$image" },
-          phoneNumber: { $first: "$phoneNumber" },
-          approvedCount: {
-            $sum: {
-              $cond: [{ $eq: ["$reservations.approved", 1] }, 1, 0],
-            },
-          },
-          skippedCount: {
-            $sum: {
-              $cond: [{ $eq: ["$reservations.approved", 0] }, 1, 0],
-            },
-          },
-          totalPrice: {
-            $sum: {
-              $cond: [
-                { $eq: ["$reservations.approved", 1] },
-                "$servicePrice",
-                0,
-              ],
-            },
-          },
-        },
-      },
-      // Step 8: Use $facet for pagination and total count in one go
-      {
-        $facet: {
-          // Pipeline to get paginated results
-          users: [{ $skip: skip }, { $limit: limit }],
-          // Pipeline to get the total count
-          totalCount: [{ $count: "count" }],
-        },
-      },
-    ]);
+    },
+  },
+  // 8. Formatiraj izlaz
+  {
+    $project: {
+      id: "$_id",
+      _id: 0,
+      name: 1,
+      phoneNumber: 1,
+      image: 1,
+      approvedCount: 1,
+      skippedCount: 1,
+      totalRevenue: 1,
+    },
+  },
+]);
 
+console.log("result",result)
     // Extract the results from the $facet output
-    const users = result[0].users;
-    const total =
-      result[0].totalCount.length > 0 ? result[0].totalCount[0].count : 0;
+    // const users = result[0].users;
+    // const total =
+    //   result[0].totalCount.length > 0 ? result[0].totalCount[0].count : 0;
 
-    // Send the paginated data and total count in the response
+    // // Send the paginated data and total count in the response
     res.status(200).json({
       status: 200,
-      users: users,
-      totalCount: total,
-      page: page,
-      limit: limit,
+      users: result,
+      // totalCount: total,
+      // page: page,
+      // limit: limit,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -351,7 +356,6 @@ export const createEmployer = async (req, res) => {
 //change employers pasword
 export const changeEmployerPassword = async (req, res) => {
   try {
-    // 🔐 1. Decode JWT from URL (e.g., /user/update/:token)
     const email = req.params.id;
 
     const user = await Employers.findOne({ email });
