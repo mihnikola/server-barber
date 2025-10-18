@@ -15,7 +15,7 @@ admin.initializeApp({
 exports.sendNotification = async (req, res) => {
   const { token, title, content, data } = req.body;
 
-  // const message = {
+  // const message = {  
   //   to: token,
   //   sound: "default",
   //   title: title,

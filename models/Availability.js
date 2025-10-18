@@ -26,6 +26,10 @@ const availabilitySchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Employers",
     },
+    place: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Place",
+    },
     description: {
       type: String,
     },
@@ -45,8 +49,6 @@ const availabilitySchema = new mongoose.Schema(
 
     //if cancellation...service and user are null
     //if reservation.... everything is not empty
-
-
   },
   { timestamps: true }
 );

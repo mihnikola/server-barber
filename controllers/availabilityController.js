@@ -13,7 +13,6 @@ const { getSortReservationData } = require("../helpers/getTimeZone");
 const { LOCALIZATION_MAP } = require("../helpers/localizationMap");
 const CountReservation = require("../models/CountReservation");
 
-
 //promene validne
 exports.getAvailabilities = async (req, res) => {
   const timeZone = req.headers["time-zone"];
@@ -37,12 +36,8 @@ exports.getAvailabilities = async (req, res) => {
     })
       .sort({ date: 1 })
       .populate("service")
-      .populate({
-        path: "employer",
-        populate: {
-          path: "place",
-        },
-      });
+      .populate("place")
+      .populate("employer");
 
     const reservations = getSortReservationData(reservationData, timeZone);
 
@@ -79,55 +74,56 @@ exports.getAvailability = async (req, res) => {
   try {
     const reservationItem = await Availability.findOne({ _id: id })
       .populate("service")
+      .populate("place")
       .populate("rating")
       .populate({
         path: "employer",
-        populate: [{ path: "place" }, { path: "seniority" }],
+        populate: { path: "seniority" },
       });
 
     const filteredEmployers = [reservationItem.employer]; // <- sada je definisan
     const employerIds = [reservationItem.employer._id]; // koristi se u agregaciji
 
-   const aggregatedData = await Availability.aggregate([
-         {
-           $match: {
-             employer: { $in: employerIds },
-           },
-         },
-         {
-           $lookup: {
-             from: "ratings",
-             localField: "rating",
-             foreignField: "_id",
-             as: "ratingInfo",
-           },
-         },
-         {
-           $unwind: {
-             path: "$ratingInfo",
-             preserveNullAndEmptyArrays: true,
-           },
-         },
-         {
-           $match: {
-             ratingInfo: { $ne: null }, // <-- Ovo je dodatak
-           },
-         },
-         {
-           $group: {
-             _id: "$employer",
-             averageRating: { $avg: "$ratingInfo.rate" },
-             userSet: { $addToSet: "$user" },
-           },
-         },
-         {
-           $project: {
-             _id: 1,
-             averageRating: 1,
-             userCount: { $size: "$userSet" },
-           },
-         },
-       ]);
+    const aggregatedData = await Availability.aggregate([
+      {
+        $match: {
+          employer: { $in: employerIds },
+        },
+      },
+      {
+        $lookup: {
+          from: "ratings",
+          localField: "rating",
+          foreignField: "_id",
+          as: "ratingInfo",
+        },
+      },
+      {
+        $unwind: {
+          path: "$ratingInfo",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $match: {
+          ratingInfo: { $ne: null }, // <-- Ovo je dodatak
+        },
+      },
+      {
+        $group: {
+          _id: "$employer",
+          averageRating: { $avg: "$ratingInfo.rate" },
+          userSet: { $addToSet: "$user" },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          averageRating: 1,
+          userCount: { $size: "$userSet" },
+        },
+      },
+    ]);
 
     // 3. Napravi mapu za brz pristup statistikama po employerId
     const aggregationMap = {};
@@ -155,9 +151,8 @@ exports.getAvailability = async (req, res) => {
     const updatedReservationItem = {
       ...updatedReservation.toObject(),
       employer: result[0],
-      place: reservationItem.employer.place.address
+      place: reservationItem.employer.place.address,
     };
-
 
     res.status(200).json(updatedReservationItem);
   } catch (err) {
@@ -231,8 +226,16 @@ exports.patchAvailabilityById = async (req, res) => {
 
 exports.createAvailability = async (req, res) => {
   try {
-    const { date, time, service, token, customer, employerId, description } =
-      req.body;
+    const {
+      date,
+      time,
+      service,
+      token,
+      customer,
+      employerId,
+      description,
+      location,
+    } = req.body;
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
@@ -252,6 +255,8 @@ exports.createAvailability = async (req, res) => {
     const startDate = updateTimeToTenUTC(date?.dateString || date, time);
     const endDate = convertToEndDateValue(startDate, serviceDuration);
 
+    const locationId = location?.length > 0 ? location[0].id : location.id;
+
     const newReservation = {
       startDate,
       endDate,
@@ -259,6 +264,7 @@ exports.createAvailability = async (req, res) => {
       service: serviceId,
       employer,
       user: customerId,
+      place: locationId,
       description,
       approved: 0,
       status: 0,
