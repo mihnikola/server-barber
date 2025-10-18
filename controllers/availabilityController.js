@@ -151,7 +151,7 @@ exports.getAvailability = async (req, res) => {
     const updatedReservationItem = {
       ...updatedReservation.toObject(),
       employer: result[0],
-      place: reservationItem.employer.place.address,
+      place: reservationItem.place.address,
     };
 
     res.status(200).json(updatedReservationItem);
