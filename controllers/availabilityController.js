@@ -67,10 +67,7 @@ function updateServiceName(reservationItem, localization) {
 
 exports.getAvailability = async (req, res) => {
   const { id } = req.params;
-  await Availability.updateMany(
-    { place: { $exists: false } }, // uslov: polje "place" ne postoji
-    { $set: { place: "68bebf3420a3a6f22c697435" } } // postavi "place" na zadatu vrednost
-  );
+ 
   const lang = req.headers["language"];
   const localization = LOCALIZATION_MAP[lang]?.SERVICES;
 
