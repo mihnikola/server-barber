@@ -1,6 +1,8 @@
 const { default: axios } = require("axios");
 const Availability = require("../models/Availability");
 const jwt = require("jsonwebtoken");
+const { default: mongoose } = require("mongoose");
+const { LOCALIZATION_MAP } = require("../helpers/localizationMap");
 
 async function sendNotificationRequest(reservationData) {
   const functionUrl =
@@ -26,6 +28,66 @@ async function deleteAppointmentsRequest(reservationData) {
       console.log("deleteAppointmentsRequest error", err);
     });
 }
+exports.checkDays = async (req, res) => {
+  try {
+    const monthValue = req.query["monthValue"];
+    const date = new Date(monthValue);
+    const start = new Date(date.getFullYear(), date.getMonth(), 1);
+    const end = new Date(date.getFullYear(), date.getMonth() + 1, 1);
+
+    const result = await Availability.aggregate([
+      {
+        $match: {
+          startDate: { $gte: start, $lt: end },
+          employer: new mongoose.Types.ObjectId("67b325188505dffa6070ccbd"),
+          status: { $nin: [1] },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: "$startDate" },
+            month: { $month: "$startDate" },
+            day: { $dayOfMonth: "$startDate" },
+          },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { "_id.day": 1 } },
+    ]);
+    res.status(200).json(result);
+  } catch (err) {
+    console.log("err", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+function convertReservationsToEvents(reservations) {
+  const localization = LOCALIZATION_MAP["en"]?.SERVICES;
+
+  return reservations.map((reservation) => {
+    const startTime = new Date(reservation.startDate);
+    const endTime = new Date(reservation.endDate);
+    const formattedTime = startTime.toISOString().slice(11, 16);
+    const formattedEndTime = endTime.toISOString().slice(11, 16);
+    const statusMap = {
+      0: "arrived",
+      1: "missed",
+    };
+    return {
+      id: reservation._id,
+      name: localization[reservation.service?.name] || "undefined service",
+      startTime: formattedTime,
+      endTime: formattedEndTime,
+      status: statusMap[reservation.approved] || "undefined",
+      reservation: {
+        id: reservation._id,
+        note: reservation.description || "",
+        user: reservation.user?.name || "undefined user",
+      },
+    };
+  });
+}
 
 exports.getAvailabilities = async (req, res) => {
   // const token = req.header("Authorization")
@@ -36,24 +98,26 @@ exports.getAvailabilities = async (req, res) => {
   // if (!token) return res.status(403).send("Access denied");
 
   try {
-    const  dateValue  = req.query["dateValue"];
+    const dateValue = req.query["dateValue"];
     // const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-
+    console.log("getAvailabilities", dateValue);
     const rangeStart = new Date(dateValue + "T00:00:00.000Z").toISOString();
     const rangeEnd = new Date(dateValue + "T23:00:00.000Z").toISOString();
 
     const availabilitiesData = await Availability.find({
-      employer: "67b325188505dffa6070ccbd",
-      startDate: { $gt: rangeStart },
-      endDate: { $lt: rangeEnd },
+      employer: new mongoose.Types.ObjectId("67b325188505dffa6070ccbd"),
+      startDate: { $gte: rangeStart, $lt: rangeEnd },
       status: { $nin: [1] },
     })
       .sort({ date: 1 })
       .populate("service")
       .populate("user");
 
+    console.log("|availabilitiesData", availabilitiesData);
 
-    res.status(200).json(availabilitiesData);
+    const events = convertReservationsToEvents(availabilitiesData);
+
+    res.status(200).json(events);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -125,7 +189,9 @@ exports.createAvailability = async (req, res) => {
       type: 0,
       startDate: { $gte: startDate, $lt: endDate },
     });
-    const reservationIdsDisabled = reservationsDataDisabled.map((doc) => doc._id.toString());
+    const reservationIdsDisabled = reservationsDataDisabled.map((doc) =>
+      doc._id.toString()
+    );
 
     await Availability.updateMany(
       {

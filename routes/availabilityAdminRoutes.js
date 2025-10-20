@@ -6,6 +6,7 @@ const router = express.Router();
 
 // router.get("/", authenticate, availabilityAdminController.getAvailabilities);
 router.get("/", availabilityAdminController.getAvailabilities);
+router.get("/check", availabilityAdminController.checkDays);
 router.get("/:id", authenticate, availabilityAdminController.getAvailability);
 router.put("/:id", authenticate, availabilityAdminController.patchAvailability);
 router.post("/", authenticate, availabilityAdminController.createAvailability);
