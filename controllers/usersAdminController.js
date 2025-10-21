@@ -24,96 +24,101 @@ export const getClients = async (req, res) => {
     // const skip = (page - 1) * limit;
     const currentDate = new Date();
 
-const result = await User.aggregate([
-  // 1. Samo verifikovani korisnici
-  {
-    $match: {
-      isVerified: true,
-      deletedAt: null,
-    },
-  },
-  // 2. Poveži sa availabilities
-  {
-    $lookup: {
-      from: "availabilities",
-      localField: "_id",
-      foreignField: "user",
-      as: "availabilities",
-    },
-  },
-  // 3. Razbij array
-  {
-    $unwind: {
-      path: "$availabilities",
-      preserveNullAndEmptyArrays: false, // Uklanjamo korisnike bez termina
-    },
-  },
-  // 4. Filtriraj samo prošle termine
-  {
-    $match: {
-      "availabilities.status": 0,
-    },
-  },
-  // 5. Poveži sa services (da dobiješ cenu)
-  {
-    $lookup: {
-      from: "services",
-      localField: "availabilities.service",
-      foreignField: "_id",
-      as: "serviceDetails",
-    },
-  },
-  // 6. Uzmi samo jednu cenu
-  {
-    $addFields: {
-      servicePrice: { $first: "$serviceDetails.price" },
-    },
-  },
-  // 7. Grupisi po korisniku
-  {
-    $group: {
-      _id: "$_id",
-      name: { $first: "$name" },
-      phoneNumber: { $first: "$phoneNumber" },
-      image: { $first: "$image" },
-      approvedCount: {
-        $sum: {
-          $cond: [{ $eq: ["$availabilities.approved", 0] }, 1, 0],
+    const result = await User.aggregate([
+      // 1. Samo verifikovani korisnici
+      {
+        $match: {
+          isVerified: true,
+          deletedAt: null,
         },
       },
-      skippedCount: {
-        $sum: {
-          $cond: [{ $eq: ["$availabilities.approved", 1] }, 1, 0],
+      // 2. Poveži sa availabilities
+      {
+        $lookup: {
+          from: "availabilities",
+          localField: "_id",
+          foreignField: "user",
+          as: "availabilities",
         },
       },
-      
-      totalRevenue: {
-        $sum: {
-          $cond: [
-            { $eq: ["$availabilities.approved", 0] },
-            "$servicePrice",
-            0,
-          ],
+      // 3. Razbij array
+      {
+        $unwind: {
+          path: "$availabilities",
+          preserveNullAndEmptyArrays: false, // Uklanjamo korisnike bez termina
         },
       },
-    },
-  },
-  // 8. Formatiraj izlaz
-  {
-    $project: {
-      id: "$_id",
-      _id: 0,
-      name: 1,
-      phoneNumber: 1,
-      image: 1,
-      approvedCount: 1,
-      skippedCount: 1,
-      totalRevenue: 1,
-    },
-  },
-]);
+      // 4. Filtriraj samo prošle termine
+      {
+        $match: {
+          "availabilities.status": 0,
+        },
+      },
+      // 5. Poveži sa services (da dobiješ cenu)
+      {
+        $lookup: {
+          from: "services",
+          localField: "availabilities.service",
+          foreignField: "_id",
+          as: "serviceDetails",
+        },
+      },
+      // 6. Uzmi samo jednu cenu
+      {
+        $addFields: {
+          servicePrice: { $first: "$serviceDetails.price" },
+        },
+      },
+      // 7. Grupisi po korisniku
+      {
+        $group: {
+          _id: "$_id",
+          name: { $first: "$name" },
+          email: { $first: "$email" },
+          phoneNumber: { $first: "$phoneNumber" },
+          image: { $first: "$image" },
+          createdAt: { $first: "$createdAt" },
+          approvedCount: {
+            $sum: {
+              $cond: [{ $eq: ["$availabilities.approved", 0] }, 1, 0],
+            },
+          },
+          skippedCount: {
+            $sum: {
+              $cond: [{ $eq: ["$availabilities.approved", 1] }, 1, 0],
+            },
+          },
 
-console.log("result",result)
+          totalRevenue: {
+            $sum: {
+              $cond: [
+                { $eq: ["$availabilities.approved", 0] },
+                "$servicePrice",
+                0,
+              ],
+            },
+          },
+        },
+      },
+      {
+        $sort: { createdAt: -1 }, // 👈 sortiranje (najnoviji prvi)
+      },
+      // 8. Formatiraj izlaz
+      {
+        $project: {
+          id: "$_id",
+          _id: 0,
+          name: 1,
+          email: 1,
+          phoneNumber: 1,
+          image: 1,
+          approvedCount: 1,
+          skippedCount: 1,
+          totalRevenue: 1,
+        },
+      },
+    ]);
+
     // Extract the results from the $facet output
     // const users = result[0].users;
     // const total =
@@ -172,7 +177,8 @@ export const softDeleteUser = async (req, res) => {
       return res.status(404).json({ message: "User not found." });
     }
     res.status(200).json({
-      message: "User soft-deleted successfully.",
+      status: 200,
+      message: "User deactivated successfully.",
       user: deletedUser,
     });
   } catch (error) {
@@ -303,7 +309,9 @@ export const loginEmployer = async (req, res) => {
     const token = jwt.sign(employerData, process.env.JWT_SECRET_KEY, {
       expiresIn: "10000000m",
     });
-    res.status(200).json({ status: 200, token, userId: employer._id.toHexString() });
+    res
+      .status(200)
+      .json({ status: 200, token, userId: employer._id.toHexString() });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
