@@ -691,53 +691,99 @@ export const getEmployers = async (req, res) => {
     const employerIds = filteredEmployers.map((emp) => emp._id);
 
     // 4. Dobavi ocene i broj korisnika za te employere preko Availability
+    // const aggregatedData = await Availability.aggregate([
+    //   {
+    //     $match: {
+    //       employer: { $in: employerIds },
+    //     },
+    //   },
+    //   {
+    //     $lookup: {
+    //       from: "ratings",
+    //       localField: "rating",
+    //       foreignField: "_id",
+    //       as: "ratingInfo",
+    //     },
+    //   },
+    //   {
+    //     $unwind: {
+    //       path: "$ratingInfo",
+    //       preserveNullAndEmptyArrays: true,
+    //     },
+    //   },
+    //   {
+    //     $match: {
+    //       ratingInfo: { $ne: null }, // <-- Ovo je dodatak
+    //     },
+    //   },
+    //   {
+    //     $group: {
+    //       _id: "$employer",
+    //       averageRating: { $avg: "$ratingInfo.rate" },
+    //       userSet: { $addToSet: "$user" },
+    //     },
+    //   },
+    //   {
+    //     $project: {
+    //       _id: 1,
+    //       averageRating: 1,
+    //       userCount: { $size: "$userSet" },
+    //     },
+    //   },
+    // ]);
     const aggregatedData = await Availability.aggregate([
-      {
-        $match: {
-          employer: { $in: employerIds },
-        },
-      },
-      {
-        $lookup: {
-          from: "ratings",
-          localField: "rating",
-          foreignField: "_id",
-          as: "ratingInfo",
-        },
-      },
-      {
-        $unwind: {
-          path: "$ratingInfo",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $match: {
-          ratingInfo: { $ne: null }, // <-- Ovo je dodatak
-        },
-      },
-      {
-        $group: {
-          _id: "$employer",
-          averageRating: { $avg: "$ratingInfo.rate" },
-          userSet: { $addToSet: "$user" },
-        },
-      },
-      {
-        $project: {
-          _id: 1,
-          averageRating: 1,
-          userCount: { $size: "$userSet" },
-        },
-      },
-    ]);
+  {
+    $match: {
+      employer: { $in: employerIds },
+    },
+  },
+  {
+    $lookup: {
+      from: "ratings",
+      localField: "rating",
+      foreignField: "_id",
+      as: "ratingInfo",
+    },
+  },
+  {
+    $unwind: {
+      path: "$ratingInfo",
+      preserveNullAndEmptyArrays: true,
+    },
+  },
+  {
+    $match: {
+      ratingInfo: { $ne: null },
+    },
+  },
+  {
+    $group: {
+      _id: "$employer",
+      averageRating: { $avg: "$ratingInfo.rate" },
+      totalRating: { $sum: "$ratingInfo.rate" },
+      ratingCount: { $sum: 1 },        // broj svih ocena
+      userCount: { $sum: 1 },          // broj ocenjivanja (može duplikat)
+      users: { $addToSet: "$user" },   // jedinstveni korisnici
+    },
+  },
+  {
+    $project: {
+      _id: 1,
+      averageRating: 1,
+      totalRating: 1,
+      ratingCount: 1,
+      userCount: 1,
+      users: 1, // već bez duplikata
+    },
+  },
+]);
     console.log("umaga", aggregatedData);
     // 5. Pretvori u mapu za lakši pristup po employerId
     const aggregationMap = {};
     aggregatedData.forEach((item) => {
       aggregationMap[item._id.toString()] = {
         averageRating: item.averageRating || 0,
-        userCount: item.userCount || 0,
+        userCount: item.users?.length || 0,
       };
     });
 
@@ -750,7 +796,7 @@ export const getEmployers = async (req, res) => {
         image: user.image,
         seniority: user?.seniority?.title || null,
         averageRating: stats.averageRating || 0,
-        userCount: stats.averageRating !== 0 ? stats.userCount : 0,
+        userCount: stats.averageRating !== 0 ? item.users?.length : 0,
       };
     });
     res.status(200).json({ status: 200, data: result });
