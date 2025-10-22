@@ -32,6 +32,7 @@ const reviewRoutes = require("./routes/reviewRoutes");
 const countReservationRoutes = require("./routes/countReservationRoutes");
 const employersServicesRoutes = require("./routes/employersServicesRoutes");
 const seniorityRoutes = require("./routes/seniorityRoutes");
+const limitationRoutes = require("./routes/limitationRoutes");
 
 const { default: connectDB } = require("./connectDB");
 const User = require("./models/User");
@@ -60,6 +61,8 @@ app.use("/admin/services", serviceAdminRoutes);
 
 app.use("/availabilities", availabilityRoutes);
 app.use("/admin/availabilities", availabilityAdminRoutes);
+
+app.use("/limitations", limitationRoutes);
 
 app.use("/times", timesRoutes);
 app.use("/admin/times", timeAdminRoutes);
