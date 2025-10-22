@@ -681,7 +681,6 @@ export const getEmployers = async (req, res) => {
     const allEmployers = employerServiceLinks.flatMap(
       (item) => item.employers || []
     );
-
     // 2. Filtriraj po placeId
     const filteredEmployers = allEmployers.filter(
       (emp) => emp.place?.toString() === placeId
@@ -731,74 +730,84 @@ export const getEmployers = async (req, res) => {
     //     },
     //   },
     // ]);
-    const aggregatedData = await Availability.aggregate([
-  {
-    $match: {
-      employer: { $in: employerIds },
-    },
-  },
-  {
-    $lookup: {
-      from: "ratings",
-      localField: "rating",
-      foreignField: "_id",
-      as: "ratingInfo",
-    },
-  },
-  {
-    $unwind: {
-      path: "$ratingInfo",
-      preserveNullAndEmptyArrays: true,
-    },
-  },
-  {
-    $match: {
-      ratingInfo: { $ne: null },
-    },
-  },
-  {
-    $group: {
-      _id: "$employer",
-      averageRating: { $avg: "$ratingInfo.rate" },
-      totalRating: { $sum: "$ratingInfo.rate" },
-      ratingCount: { $sum: 1 },        // broj svih ocena
-      userCount: { $sum: 1 },          // broj ocenjivanja (može duplikat)
-      users: { $addToSet: "$user" },   // jedinstveni korisnici
-    },
-  },
-  {
-    $project: {
-      _id: 1,
-      averageRating: 1,
-      totalRating: 1,
-      ratingCount: 1,
-      userCount: 1,
-      users: 1, // već bez duplikata
-    },
-  },
-]);
-    console.log("umaga", aggregatedData);
-    // 5. Pretvori u mapu za lakši pristup po employerId
-    const aggregationMap = {};
-    aggregatedData.forEach((item) => {
-      aggregationMap[item._id.toString()] = {
-        averageRating: item.averageRating || 0,
-        userCount: item.users?.length || 0,
-      };
-    });
 
-    // 6. Mapiraj finalni rezultat za frontend
-    const result = filteredEmployers.map((user) => {
-      const stats = aggregationMap[user._id.toString()] || {};
-      return {
-        id: user._id,
-        name: user.name,
-        image: user.image,
-        seniority: user?.seniority?.title || null,
-        averageRating: stats.averageRating || 0,
-        userCount: stats.averageRating !== 0 ? item.users?.length : 0,
-      };
-    });
+    const aggregatedData = await Availability.aggregate([
+      {
+        $match: {
+          employer: { $in: employerIds },
+        },
+      },
+      {
+        $lookup: {
+          from: "ratings",
+          localField: "rating",
+          foreignField: "_id",
+          as: "ratingInfo",
+        },
+      },
+      {
+        $unwind: {
+          path: "$ratingInfo",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $match: {
+          ratingInfo: { $ne: null },
+        },
+      },
+      {
+        $group: {
+          _id: "$employer",
+          averageRating: { $avg: "$ratingInfo.rate" },
+          totalRating: { $sum: "$ratingInfo.rate" },
+          ratingCount: { $sum: 1 },
+          users: { $addToSet: "$user" },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          averageRating: 1,
+          totalRating: 1,
+          ratingCount: 1,
+          users: 1,
+        },
+      },
+    ]);
+    let result;
+    if (aggregatedData?.length === 0) {
+      result = filteredEmployers.map((user) => {
+        return {
+          id: user._id,
+          name: user.name,
+          image: user.image,
+          seniority: user?.seniority?.title || null,
+          averageRating: 0,
+          userCount: 0,
+        };
+      });
+    } else {
+      const aggregationMap = {};
+      aggregatedData.forEach((item) => {
+        aggregationMap[item._id.toString()] = {
+          _id: item._id,
+          averageRating: item.averageRating || 0,
+          userCount: item.users?.length || 0,
+        };
+      });
+      result = filteredEmployers.map((user) => {
+        const stats = aggregationMap[user._id.toString()] || {};
+        return {
+          id: user._id,
+          name: user.name,
+          image: user.image,
+          seniority: user?.seniority?.title || null,
+          averageRating: stats.averageRating || 0,
+          userCount: stats.userCount || 0,
+        };
+      });
+    }
     res.status(200).json({ status: 200, data: result });
   } catch (err) {
     res.status(500).json({ error: err.message });
