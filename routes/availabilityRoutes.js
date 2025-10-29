@@ -9,8 +9,8 @@ const router = express.Router();
 router.post("/", availabilityController.createAvailability);
 
 // Get all availabilities
-router.get("/", authenticate, availabilityController.getAvailabilities);
+router.get("/",  availabilityController.getAvailabilities);
 router.get("/:id",  availabilityController.getAvailability);
-router.put("/:id", authenticate, availabilityController.patchAvailabilityById);
+router.put("/:id",  availabilityController.patchAvailabilityById);
 
 module.exports = router;
