@@ -5,7 +5,8 @@ const { authenticate } = require("../middleware/authMiddleware");
 const router = express.Router();
 
 // Create a new service
-router.post("/", authenticate, timeAdminController.createTimeSlots);
+// router.post("/", authenticate, timeAdminController.createTimeSlots);
+router.post("/",  timeAdminController.createTimeSlots);
 
 // Get all services
 router.get("/", authenticate, timeAdminController.getTimes);
