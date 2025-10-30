@@ -4,7 +4,7 @@ const Review = require("../models/Review");
 
 exports.getCompany = async (req, res) => {
   const lang = req.headers["language"];
-
+console.log("getCompany")
   try {
     const aboutUs = await AboutUs.findOne({ lang }).lean();
     const reviews = await Review.find({ lang });

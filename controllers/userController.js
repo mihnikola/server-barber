@@ -9,6 +9,20 @@ import EmployersServices from "../models/EmployersServices.js";
 import Rating from "../models/Rating.js";
 import Availability from "../models/Availability.js";
 
+async function changeLanguageFirebase(data) {
+  const functionUrl =
+    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/addOrUpdateLanguageLocalization";
+  const responseEmail = await axios
+    .post(functionUrl, data)
+    .then((res) => {
+      return res;
+    })
+    .catch((err) => {
+      return { status: err.status, text: "Something goes wrong!" };
+    });
+
+  return responseEmail;
+}
 export const patchUser = async (req, res) => {
   try {
     const userDataId = req.params.id;
@@ -451,6 +465,44 @@ export const changeUserPassword = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const changeLanguage = async (req, res) => {
+  try {
+    const tokenData = req.params.id;
+
+    console.log("changeLanguage+++", tokenData);
+
+    const decoded = jwt.verify(tokenData, process.env.JWT_SECRET_KEY);
+    const { id, token } = decoded;
+    const { langData } = req.body;
+
+    const contentData = { userId: id, token, lang: langData };
+    await changeLanguageFirebase(contentData)
+      .then((result) => {
+        return res.status(200).json({
+          success: true,
+          message: `Successfully updated language`,
+          status: 200,
+        });
+      })
+      .catch((err) => {
+        return res.status(500).json({
+          success: false,
+          message: err,
+          status: 500,
+        });
+      });
+
+    res.status(200).json({
+      message: "User updated successfully jabadaba language",
+      status: 200,
+    });
+  } catch (err) {
+    console.error("Error in xxxxxxxxxx:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 async function sendEmail(receipients) {
   const functionUrl =
     "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/sendMail";

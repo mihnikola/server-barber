@@ -21,4 +21,5 @@ router.put('/:id', uploadUserImage.single('image'), userController.patchUser);
 
 router.get('/:id', userController.getUser);
 router.put('/:id/changePassword', userController.changeUserPassword);
+router.put('/:id/changeLanguage', userController.changeLanguage);
 module.exports = router;
