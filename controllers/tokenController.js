@@ -15,7 +15,7 @@ admin.initializeApp({
 exports.sendNotification = async (req, res) => {
   const { token, title, content, data } = req.body;
 
-  // const message = {  
+  // const message = {
   //   to: token,
   //   sound: "default",
   //   title: title,
@@ -88,12 +88,26 @@ async function updateTokenFirebase(userId, token) {
     });
 }
 
+async function changeLanguageFirebase(data) {
+  const functionUrl =
+    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/addOrUpdateLanguageLocalization";
+  const responseEmail = await axios
+    .post(functionUrl, data)
+    .then((res) => {
+      console.log("langauge value solve",res.data.message);
+    })
+    .catch((err) => {
+      console.log("err", err);
+    });
+
+  return responseEmail;
+}
+
 exports.saveToken = async (req, res) => {
-  const { tokenExpo, tokenUser } = req.body;
+  const { tokenExpo, tokenUser, lang } = req.body;
 
   try {
     const userData = await Token.findOne({ user: tokenUser });
-    console.log("tokenExpo", tokenExpo);
     if (userData) {
       await Token.findOneAndUpdate(
         { user: tokenUser },
@@ -101,6 +115,9 @@ exports.saveToken = async (req, res) => {
         { new: true }
       );
       updateTokenFirebase(tokenUser, tokenExpo);
+      const contentData = { userId: tokenUser, token: tokenExpo, lang };
+
+      changeLanguageFirebase(contentData);
 
       return res
         .status(200)
