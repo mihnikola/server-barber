@@ -81,10 +81,14 @@ async function updateTokenFirebase(userId, token) {
   await axios
     .post(functionUrl, { userId, token })
     .then((res) => {
-      console.log("updateTokenFirebase solve", res.data.message);
+      console.log("data", res.data);
+
+      return true;
     })
     .catch((err) => {
       console.log("err", err);
+
+      return false;
     });
 }
 
@@ -94,10 +98,12 @@ async function changeLanguageFirebase(data) {
   const responseEmail = await axios
     .post(functionUrl, data)
     .then((res) => {
-      console.log("langauge value solve",res.data.message);
+      console.log("langauge value solve", res.data);
+      return true;
     })
     .catch((err) => {
       console.log("err", err);
+      return false;
     });
 
   return responseEmail;
@@ -114,10 +120,12 @@ exports.saveToken = async (req, res) => {
         { $set: { token: tokenExpo } },
         { new: true }
       );
-      updateTokenFirebase(tokenUser, tokenExpo);
+      const x = await updateTokenFirebase(tokenUser, tokenExpo);
+      console.log("updateTokenFirebase x", x);
       const contentData = { userId: tokenUser, token: tokenExpo, lang };
 
-      changeLanguageFirebase(contentData);
+      const y = await changeLanguageFirebase(contentData);
+      console.log("changeLanguageFirebase y", y);
 
       return res
         .status(200)
