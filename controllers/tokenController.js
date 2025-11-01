@@ -15,46 +15,17 @@ admin.initializeApp({
 exports.sendNotification = async (req, res) => {
   const { token, title, content, data } = req.body;
 
-  // const message = {
-  //   to: token,
-  //   sound: "default",
-  //   title: title,
-  //   body: content,
-  //   data,
-  // };
-  // await fetch("https://exp.host/--/api/v2/push/send", {
-  //   method: "POST",
-  //   headers: {
-  //     Accept: "application/json",
-  //     "Accept-encoding": "gzip, deflate",
-  //     "Content-Type": "application/json",
-  //   },
-  //   body: JSON.stringify(message),
-  // })
-  //   .then((solve) => {
-  //     console.log("solve++", solve);
-  //     if (solve.status === 400) {
-  //       res
-  //         .status(500)
-  //         .send(`${solve.statusText} Notification cannot successfully`);
-  //     } else {
-  //       res.status(200).send("Notification sent successfully");
-  //     }
-  //   })
-  //   .catch((err) => {
-  //     console.log("solve++", err);
-
-  //     res.status(500).send("Notification cannot successfully");
-  //   });
   const message = {
-    token, // expo token koji si dobio
+    token,
     notification: {
       title,
       body: content,
     },
-    data, // dodatni payload (optional)
+    data, // dodatni payload (npr. { url: 'reservationId' })
     android: {
-      priority: "high",
+      notification: {
+        channelId: "default", // mora da se poklapa sa kanalom na Android-u
+      },
     },
     apns: {
       payload: {
@@ -67,11 +38,9 @@ exports.sendNotification = async (req, res) => {
 
   try {
     const response = await admin.messaging().send(message);
-    console.log("Successfully sent message:", response);
-    res.status(200).send("Notification sent successfully");
+    console.log("✅ Notification sent successfully:", response);
   } catch (error) {
-    console.error("Error sending message:", error);
-    res.status(500).send("Notification cannot successfully");
+    console.error("🔥 Error sending notification:", error);
   }
 };
 // API route to save token
