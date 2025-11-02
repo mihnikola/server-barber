@@ -16,15 +16,25 @@ exports.sendNotification = async (req, res) => {
   const { token, title, content, data } = req.body;
 
   const message = {
-    to: token,
+    token,
     notification: {
-      title: "Zakazan termin",
-      body: "Pogledaj u kalendaru",
+      title,
+      body: content,
     },
-    data: {
-      screen: "/(tabs)/(03_calendar)",
+    data, // dodatni payload (npr. { url: 'reservationId' })
+    android: {
+      notification: {
+        channelId: "default", // mora da se poklapa sa kanalom na Android-u
+      },
     },
-    priority: "high",
+    apns: {
+      payload: {
+        aps: {
+          sound: "default",
+        },
+      },
+    },
+    priority: "high"
   };
 
   try {
