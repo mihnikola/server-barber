@@ -38,9 +38,13 @@ exports.sendNotification = async (req, res) => {
 
   try {
     const response = await admin.messaging().send(message);
-    console.log("✅ Notification sent successfully:", response);
+    return res
+        .status(200)
+        .send({ status: 200, message: "Notification sent successfully" });
   } catch (error) {
-    console.error("🔥 Error sending notification:", error);
+    res
+      .status(500)
+      .send({ status: 500, message: "Notification is not sent successfully" });
   }
 };
 // API route to save token
