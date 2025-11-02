@@ -34,7 +34,6 @@ exports.sendNotification = async (req, res) => {
         },
       },
     },
-    priority: "high"
   };
 
   try {
