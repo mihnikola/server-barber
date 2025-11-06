@@ -22,7 +22,7 @@ exports.sendNotification = async (req, res) => {
       body: content,
     },
     data, // dodatni payload (npr. { url: 'reservationId' })
-    android: {
+    android: {  
       notification: {
         channelId: "default", // mora da se poklapa sa kanalom na Android-u
       },
@@ -38,10 +38,13 @@ exports.sendNotification = async (req, res) => {
 
   try {
     const response = await admin.messaging().send(message);
+    console.log("response",response);
     return res
         .status(200)
         .send({ status: 200, message: "Notification sent successfully" });
   } catch (error) {
+    console.log("error",error);
+
     res
       .status(500)
       .send({ status: 500, message: "Notification is not sent successfully" });
