@@ -3,10 +3,12 @@ import Employers from "../models/Employers.js"; // Assuming User model also uses
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import axios from "axios";
+import { API_CALLS } from "../helpers/callApiFb.js";
 
 async function logoutUserFromFirebase(userId) {
-  const functionUrl =
-    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/logoutUserFromFirebase";
+
+  const functionUrl = API_CALLS.logoutUserFromFirebase;
+
   await axios
     .post(functionUrl, { userId })
     .then((res) => {

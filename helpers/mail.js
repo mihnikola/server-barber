@@ -1,9 +1,9 @@
 const { default: axios } = require("axios");
+const { API_CALLS } = require("./callApiFb");
 
 const sendEmail = async (receipients) => {
-  const functionUrl =
-    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/sendMail";
-console.log("object",receipients)
+ 
+  const functionUrl = API_CALLS.sendMailApi;
   await axios
     .post(functionUrl, {
       to: receipients.receipients,

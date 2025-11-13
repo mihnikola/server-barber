@@ -12,6 +12,7 @@ const jwt = require("jsonwebtoken");
 const { getSortReservationData } = require("../helpers/getTimeZone");
 const { LOCALIZATION_MAP } = require("../helpers/localizationMap");
 const CountReservation = require("../models/CountReservation");
+const { API_CALLS } = require("../helpers/callApiFb");
 
 //promene validne
 exports.getAvailabilities = async (req, res) => {
@@ -19,8 +20,8 @@ exports.getAvailabilities = async (req, res) => {
   const token = req.header("Authorization")
     ? req.header("Authorization").split(" ")[1]
     : req.body.headers.Authorization
-    ? req.body.headers.Authorization
-    : req.get("authorization");
+      ? req.body.headers.Authorization
+      : req.get("authorization");
   if (!token) return res.status(403).send("Access denied");
 
   const lang = req.headers["language"];
@@ -67,7 +68,7 @@ function updateServiceName(reservationItem, localization) {
 
 exports.getAvailability = async (req, res) => {
   const { id } = req.params;
- 
+
   const lang = req.headers["language"];
   const localization = LOCALIZATION_MAP[lang]?.SERVICES;
 
@@ -163,8 +164,8 @@ exports.patchAvailabilityById = async (req, res) => {
   const token = req.header("Authorization")
     ? req.header("Authorization").split(" ")[1]
     : req.body.headers.Authorization
-    ? req.body.headers.Authorization
-    : req.get("authorization");
+      ? req.body.headers.Authorization
+      : req.get("authorization");
   if (!token) return res.status(403).send("Access denied");
 
   try {
@@ -197,8 +198,8 @@ exports.patchAvailabilityById = async (req, res) => {
         .status(200)
         .json({ status: 200, message: "Reservation is rated successfully" });
     }
-    const functionUrl =
-      "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/deleteAppointment";
+    const functionUrl = API_CALLS.deleteAppointment;
+
     const resultDelete = await axios
       .post(functionUrl, { reservationId: reservation._id.toString() })
       .then((resu) => {
@@ -308,8 +309,7 @@ exports.createAvailability = async (req, res) => {
       reservationId: newAvailabilityIdValue,
     };
 
-    const functionUrl =
-      "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/addTaskToFirestore";
+    const functionUrl = API_CALLS.addTaskToFirebaseDb;
 
     await axios
       .post(functionUrl, { taskData })

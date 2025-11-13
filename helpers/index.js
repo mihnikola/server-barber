@@ -3,6 +3,7 @@ const Time = require("../models/Time");
 
 // Import Firestore Timestamp if you're working with Firebase SDK
 const { Readable } = require("stream"); // This imports the Readable stream correctly
+const { API_CALLS } = require("./callApiFb");
 
 require("dotenv").config();
 
@@ -24,8 +25,9 @@ function base64ToUriFunc(base64String) {
   return stream;
 }
 const sendTaskToBackend = async (taskData) => {
-  const functionUrl =
-    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/addTaskToFirestore";
+
+  const functionUrl = API_CALLS.addTaskToFirebaseDb;
+
   await axios
     .post(functionUrl, { taskData })
     .then((res) => {

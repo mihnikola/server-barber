@@ -3,10 +3,10 @@ const Availability = require("../models/Availability");
 const jwt = require("jsonwebtoken");
 const { default: mongoose } = require("mongoose");
 const { LOCALIZATION_MAP } = require("../helpers/localizationMap");
+const { API_CALLS } = require("../helpers/callApiFb");
 
 async function sendNotificationRequest(reservationData) {
-  const functionUrl =
-    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/sendNotificationRequest";
+  const functionUrl = API_CALLS.sendNotificationAdminRequest;
   await axios
     .post(functionUrl, { reservationIds: reservationData })
     .then((res) => {
@@ -17,8 +17,8 @@ async function sendNotificationRequest(reservationData) {
     });
 }
 async function deleteAppointmentsRequest(reservationData) {
-  const functionUrl =
-    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/deleteAppointmentsRequest";
+  const functionUrl = API_CALLS.deleteAppointmentAdminRequest;
+
   await axios
     .post(functionUrl, { reservationIds: reservationData })
     .then((res) => {
@@ -149,8 +149,7 @@ exports.patchAvailability = async (req, res) => {
       return res.status(404).send("Reservation is not found");
     }
 
-    const functionUrl =
-      "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/deleteAppointment";
+    const functionUrl = API_CALLS.deleteAppointment;
     await axios
       .post(functionUrl, { reservationId: reservation._id.toString() })
       .then(() => {

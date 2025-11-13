@@ -8,10 +8,11 @@ import axios from "axios";
 import EmployersServices from "../models/EmployersServices.js";
 import Rating from "../models/Rating.js";
 import Availability from "../models/Availability.js";
+import { API_CALLS } from "../helpers/callApiFb.js";
 
 async function changeLanguageFirebase(data) {
-  const functionUrl =
-    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/addOrUpdateLanguageLocalization";
+  const functionUrl = API_CALLS.addOrUpdateLanguageLocalization;
+
   const responseEmail = await axios
     .post(functionUrl, data)
     .then((res) => {
@@ -504,8 +505,7 @@ export const changeLanguage = async (req, res) => {
 };
 
 async function sendEmail(receipients) {
-  const functionUrl =
-    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/sendMail";
+  const functionUrl = API_CALLS.sendMailApi;
   const responseEmail = await axios
     .post(functionUrl, {
       to: receipients.receipients,
@@ -525,8 +525,7 @@ async function sendEmail(receipients) {
   return responseEmail;
 }
 async function logoutUserFromFirebase(userId) {
-  const functionUrl =
-    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/logoutUserFromFirebase";
+  const functionUrl = API_CALLS.logoutUserFromFirebase;
   await axios
     .post(functionUrl, { userId })
     .then((res) => {

@@ -1,6 +1,7 @@
 const { default: axios } = require("axios");
 const Token = require("../models/Token");
 const admin = require("firebase-admin");
+const { API_CALLS } = require("../helpers/callApiFb");
 // const serviceAccount = require("../helpers/barberappointmentapp-85deb-firebase-adminsdk-fbsvc-addb7bb47c.json");
 require("dotenv").config(); // učitava .env fajl
 
@@ -22,7 +23,7 @@ exports.sendNotification = async (req, res) => {
       body: content,
     },
     data, // dodatni payload (npr. { url: 'reservationId' })
-    android: {  
+    android: {
       notification: {
         channelId: "default", // mora da se poklapa sa kanalom na Android-u
       },
@@ -38,12 +39,12 @@ exports.sendNotification = async (req, res) => {
 
   try {
     const response = await admin.messaging().send(message);
-    console.log("response",response);
+    console.log("response", response);
     return res
-        .status(200)
-        .send({ status: 200, message: "Notification sent successfully" });
+      .status(200)
+      .send({ status: 200, message: "Notification sent successfully" });
   } catch (error) {
-    console.log("error",error);
+    console.log("error", error);
 
     res
       .status(500)
@@ -52,8 +53,8 @@ exports.sendNotification = async (req, res) => {
 };
 // API route to save token
 async function updateTokenFirebase(userId, token) {
-  const functionUrl =
-    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/updateTokenExpoPushToFirestore";
+  const functionUrl = API_CALLS.updateTokenExpoPushToFirestore;
+
   await axios
     .post(functionUrl, { userId, token })
     .then((res) => {
@@ -69,8 +70,7 @@ async function updateTokenFirebase(userId, token) {
 }
 
 async function changeLanguageFirebase(data) {
-  const functionUrl =
-    "https://us-central1-barberappointmentapp-85deb.cloudfunctions.net/addOrUpdateLanguageLocalization";
+  const functionUrl = API_CALLS.addOrUpdateLanguageLocalization;
   const responseEmail = await axios
     .post(functionUrl, data)
     .then((res) => {
