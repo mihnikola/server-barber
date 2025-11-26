@@ -24,6 +24,7 @@ exports.sendNotification = async (req, res) => {
     },
     data, // dodatni payload (npr. { url: 'reservationId' })
     android: {
+      priority: "high",
       notification: {
         channelId: "default", // mora da se poklapa sa kanalom na Android-u
       },
@@ -120,3 +121,4 @@ exports.saveToken = async (req, res) => {
       .send({ status: 500, message: "Token is not saved successfully" });
   }
 };
+
