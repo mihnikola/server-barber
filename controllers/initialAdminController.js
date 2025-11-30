@@ -45,7 +45,7 @@ exports.createInitialData = [
 
           const blob = await put(fileName, file.buffer, {
             access: "public",
-            token: process.env.BLOB_READ_WRITE_TOKEN,
+            token: process.env.BLOB_STORE_READ_WRITE_TOKEN,
           });
 
           updateData[key] = blob.url;
@@ -66,3 +66,4 @@ exports.createInitialData = [
     }
   },
 ];
+
