@@ -50,7 +50,7 @@ export const patchUser = async (req, res) => {
       // ✅ Upload to Vercel Blob using SDK
       const blob = await put(fileName, req.file.buffer, {
         access: "public", // 👈 MAKE IT PUBLIC
-        token: process.env.BLOB_READ_WRITE_TOKEN,
+        token: process.env.BLOB_STORE_READ_WRITE_TOKEN,
       });
 
       updateData.image = blob.url; // ✅ This is a public URL
@@ -864,3 +864,4 @@ export const getEmployers = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
