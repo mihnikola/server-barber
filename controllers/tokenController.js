@@ -16,23 +16,54 @@ admin.initializeApp({
 exports.sendNotification = async (req, res) => {
   const { token, title, content, data } = req.body;
 
+  // const message = {
+  //   token,
+  //   notification: {
+  //     title,
+  //     body: content,
+  //   },
+  //   data, // dodatni payload (npr. { url: 'reservationId' })
+  //   android: {
+  //     priority: "high",
+  //     notification: {
+  //       channelId: "default", // mora da se poklapa sa kanalom na Android-u
+  //     },
+  //   },
+  //   apns: {
+  //     payload: {
+  //       aps: {
+  //         sound: "default",
+  //       },
+  //     },
+  //   },
+  // };
+
   const message = {
     token,
     notification: {
       title,
       body: content,
     },
-    data, // dodatni payload (npr. { url: 'reservationId' })
+    data: {
+      ...data,
+      // mora biti string
+    },
     android: {
       priority: "high",
       notification: {
-        channelId: "default", // mora da se poklapa sa kanalom na Android-u
+        channelId: "default",
+        sound: "default",
       },
     },
     apns: {
       payload: {
         aps: {
+          alert: {
+            title,
+            body: content,
+          },
           sound: "default",
+          "content-available": 1,
         },
       },
     },
@@ -121,4 +152,5 @@ exports.saveToken = async (req, res) => {
       .send({ status: 500, message: "Token is not saved successfully" });
   }
 };
+
 
